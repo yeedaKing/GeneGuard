@@ -41,7 +41,7 @@ export const Banner = () => {
         setText(updatedText);
 
         if (isDeleting) {
-            setDelta(prevDelta => prevDelta / 2); 
+            setDelta(prevDelta => prevDelta / 4); 
         }
 
         if (!isDeleting && updatedText === fullText) {

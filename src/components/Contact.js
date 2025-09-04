@@ -23,23 +23,38 @@ export const Contact = () => {
         })
     }
 
+    const API = 
+        import.meta?.env?.VITE_API_URL ||
+        process.env.REACT_APP_API_BASE_URL ||
+        "http://localhost:5000";
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setButtonText('Sending...');
-        let response = await fetch("http://localhost:5000/contact", {
-            method: "POST",
-            headers: {
-                "Content-Type": "Application/json;charset=utf-8"
-            },
-            body: JSON.stringify(formDetails),
-        });
-        setButtonText("Send");
-        let result = response.json();
-        setFormDetails(formInitialDetails);
-        if (result.code === 200) {
-            setStatus({ success: true, message: 'Message sent successfully!'});
-        } else {
-            setStatus({success: false, message: 'Something went wrong, please try again later!'});
+
+        try {
+            const res = await fetch(`${API}/contact`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formDetails),
+            });
+
+            const result = await res.json();
+
+            setFormDetails(formInitialDetails);
+
+            if (res.ok && result.code === 200) {
+                setStatus({ success: true, message: 'Message sent successfully!'});
+            } else {
+                setStatus({
+                    success: false, 
+                    message: result?.status || 'Something went wrong, please try again later!'
+                });
+            }
+        } catch (err) {
+            setStatus({ success: false, message: "Network error. Please try again." });
+        } finally {
+            setButtonText("Send");
         }
     };
     const prefersReduced = typeof window !== "undefined" &&
