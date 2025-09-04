@@ -27,7 +27,7 @@ export const Skills = () => {
             items: 1
         }
     };
-    
+
     const prefersReduced = typeof window !== "undefined" &&
         window.matchMedia &&
         window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -91,7 +91,7 @@ export const Skills = () => {
                                 </div>      
                                 <div className="item">
                                     <img src={abilities} alt="Image" />
-                                    <h4>Soft Skills</h4>
+                                    <h4>Transferrable Skills</h4>
                                     <h6>Collaboration & Teamwork<br></br>Communication<br></br>Adaptability<br></br>Time Management<br></br>Problem Solving</h6>
                                 </div>                                                                                                
                             </Carousel>
