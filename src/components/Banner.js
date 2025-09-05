@@ -67,7 +67,7 @@ export const Banner = () => {
                         >
                             <div>
                                 <span className="tagline">Welcome to my Portfolio!</span>
-                                <h1>{`Hello! I'm Lisa Cho,`}<span className="wrap"> {text}</span></h1>
+                                <h1>{`Hello! I'm Lisa Cho,`}<br></br><span className="wrap"> {text}</span></h1>
                                 <p>I’m a Korean-American Computer Science student at CU Denver (’26) pursuing software engineering and systems development. With experience in full-stack projects, backend systems, and distributed computing, I’m passionate about building reliable solutions and contributing to collaborative, growth-oriented teams.</p>
                                 <button onClick = {() => console.log('connect')}>Let's connect<ArrowRightCircle size={25}></ArrowRightCircle></button>
                             </div>
