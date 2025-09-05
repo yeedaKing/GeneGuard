@@ -8,14 +8,14 @@ const app = express();
 const router = express.Router();
 
 app.use(express.json());
-app.use(
-    cors({
-        origin: [
-            "https://localhost:3000",
-            "https://www.lisa-cho.com/"
-        ]
-    })
-);
+app.use(cors({
+  origin: [
+    "http://localhost:3000",
+    "https://lisa-cho.com",
+    "https://www.lisa-cho.com"
+  ]
+}));
+
 app.get("/health", (_req, res) => res.send("ok"));
 
 const contactEmail = nodemailer.createTransport({
@@ -49,7 +49,7 @@ router.post("/contact", async (req, res) => {
             subject: "Contact Form Submission - Portfolio",
             html: `
                 <p><strong>Name:</strong> ${name || "(no name)"}</p>
-                <p><strong>Email:</strong> ${email || "(no email)"}</p
+                <p><strong>Email:</strong> ${email || "(no email)"}</p>
                 <p><strong>Phone:</strong> ${phone || "(no phone)"}</p>
                 <p><strong>Message:</strong> ${message || "(no message)"}</p>
             `
