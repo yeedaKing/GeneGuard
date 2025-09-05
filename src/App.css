@@ -333,6 +333,16 @@ nav.navbar .navbar-toggler[aria-expanded="true"] .navbar-toggler-icon {
   border-right: 0.08em solid #666;
 }
 
+/************ Resume Css ************/
+.resume {
+  padding: 80px 0;
+  position: relative;
+  background-color: #1b3010;
+}
+.resume-bx canvas{
+  max-width:100% !important;
+  height: auto !important;
+}
 /************ Skills Css ************/
 .skill {
   padding: 0 0 50px 0;
