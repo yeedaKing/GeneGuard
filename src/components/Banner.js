@@ -3,13 +3,14 @@ import { Container, Row, Col } from "react-bootstrap";
 import { ArrowRightCircle } from "react-bootstrap-icons";
 import headerImg from "../assets/img/header-img.png";
 import { motion } from "framer-motion";
+import { HashLink } from "react-router-hash-link";
 
 export const Banner = () => {
     const [loopNum, setLoopNum] = useState(0);
     const [isDeleting, setIsDeleting] = useState(false);
     const toRotate = [ "CS Student", "Software Engineer", "Web Developer" ];
     const [text, setText] = useState('');
-    const [delta, setDelta] = useState(150 - Math.random() * 100);
+    const [delta, setDelta] = useState(100 - Math.random() * 100);
     const period = 800;
 
     const container = {
@@ -69,7 +70,9 @@ export const Banner = () => {
                                 <span className="tagline">Welcome to my Portfolio!</span>
                                 <h1>{`Hello! I'm Lisa Cho,`}<br></br><span className="wrap"> {text}</span></h1>
                                 <p>I’m a Korean-American Computer Science student at CU Denver (’26) pursuing software engineering and systems development. With experience in full-stack projects, backend systems, and distributed computing, I’m passionate about building reliable solutions and contributing to collaborative, growth-oriented teams.</p>
-                                <button onClick = {() => console.log('connect')}>Let's connect<ArrowRightCircle size={25}></ArrowRightCircle></button>
+                                <HashLink smooth to='#connect'>
+                                    <button className="vvd">Let's connect<ArrowRightCircle size={25}></ArrowRightCircle></button>
+                                </HashLink>
                             </div>
                         </motion.div>
                     </Col>

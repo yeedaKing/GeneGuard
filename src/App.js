@@ -7,10 +7,11 @@ import { Projects } from './components/Projects';
 import { Contact } from './components/Contact';
 import { Footer } from './components/Footer';
 import { Resume } from './components/Resume';
+import { HashRouter } from 'react-router-dom';
 
 function App() {
   return (
-    <div className="App">
+    <HashRouter>
       <NavBar />
       <Banner />
       <Resume />
@@ -18,7 +19,7 @@ function App() {
       <Projects />
       <Contact />
       <Footer />
-    </div>
+    </HashRouter>
   );
 }
 

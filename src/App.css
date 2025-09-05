@@ -36,6 +36,20 @@ body {
   font-family: 'Centra', sans-serif !important;
 }
 
+:root {
+  --nav-h: 125px;
+}
+
+.site-main {
+  padding-top: var(--nav-h);
+}
+
+section {
+  scroll-margin-top: calc(var(--nav-h) + 12px);
+  padding-top: 80px;
+  padding-bottom: 80px;
+}
+
 h1, h2, h3, h4, h5, h6 {
   margin: 0;
   padding: 0;
@@ -262,9 +276,10 @@ nav.navbar .navbar-toggler[aria-expanded="true"] .navbar-toggler-icon {
 /************ Banner Css ************/
 .banner {
   margin-top: 0;
-  padding: 260px 0 100px 0;
+  padding: clamp(120px, 18vh, 260px) 0 clamp(60px, 10vh, 120px);
+  min-height: calc(100vh - var(--nav-h));
   background-image: url('./assets/img/banner-bg.png');
-  background-position: top center;
+  background-position: 65% 40%;
   background-size: cover;
   background-repeat: no-repeat;
 }
@@ -317,6 +332,10 @@ nav.navbar .navbar-toggler[aria-expanded="true"] .navbar-toggler-icon {
   animation: sway 5s ease-in-out infinite;
   transform-origin: center bottom;
 }
+
+@media (max-width: 1200px) { .banner { background-position:72% 38%; }}
+@media (max-width: 900px) { .banner { background-position:78% 34%; }}
+
 @keyframes sway {
   0% {
     transform: rotate(-5deg);
@@ -335,25 +354,56 @@ nav.navbar .navbar-toggler[aria-expanded="true"] .navbar-toggler-icon {
 
 /************ Resume Css ************/
 .resume {
-  padding: 80px 0;
+  padding: 50px 0;
   position: relative;
   background-color: #1b3010;
 }
-.resume-bx canvas{
-  max-width:100% !important;
-  height: auto !important;
+.resume-bx {
+  will-change: transform;
+}
+.resume h2 {
+  color: #e3ebde;
+	font-size: 45px;
+	font-weight: 700;
+  text-align: center;
+}
+.pdf-wrap iframe {
+  width: 100%;
+  height: 100vh;
+  border: none;
+}
+.pdf-actions {
+  display: flex;
+  gap: 10px;
+  margin: 8px 0 12px;
+}
+.btn {
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: #e3ebde;
+  color: #263E19;
+  font-weight: 600;
+  text-decoration: none;
+}
+.btn.outline {
+  background: transparent;
+  border: 1px solid #e3ebde;
+  color: #e3ebde;
+}
+.btn:hover {
+  opacity: 0.9;
 }
 /************ Skills Css ************/
 .skill {
-  padding: 0 0 50px 0;
+  padding: 50px 0 50px 0;
   position: relative;
 }
 .skill-bx {
   background: #1b3010;
   border-radius: 64px;
   text-align: center;
-  padding: 60px 50px;
-  margin-top: -60px;
+  padding: 60px 0;
+  margin-top: 24px;
 }
 .skill h2 {
   color: #e3ebde;
@@ -368,19 +418,47 @@ nav.navbar .navbar-toggler[aria-expanded="true"] .navbar-toggler-icon {
 }
 .skill p {
     color: #d2dfc9;
-    font-size: 18px;
+    font-size: 24px;
     letter-spacing: 0.8px;
     line-height: 1.5em;
-    margin: 14px 0 75px 0;
+    margin: 14px 0 50px 0;
 }
 .skill-slider {
-  width: 80%;
+  width: 90%;
   margin: 0 auto;
   position: relative;
 }
 .skill-slider .item img {
   width: 50%;
   margin: 0 auto 15px auto;
+}
+.skill .react-multiple-carousel__arrow {
+  background: rgba(81,107,64,.7)!important;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  box-shadow: none;
+  top: 50%;
+  transform: translateY(-50%);
+  transition: background-color .2s ease;
+}
+.skill .react-multiple-carousel__arrow::before {
+  color: #dbe5d4 !important;
+  font-size: 18px;
+}
+.skill .react-multiple-carousel__arrow:hover {
+  background: #112308 !important;
+}
+.skill .react-multiple-carousel__arrow {
+  top: auto; 
+  bottom: 250px; 
+  transform: none;
+}
+.skill .react-multiple-carousel__arrow--left  {
+  left: 50%; transform: translateX(-570px); 
+}
+.skill .react-multiple-carousel__arrow--right {
+  right: 50%; transform: translateX(570px); 
 }
 .background-image-left {
   top: 28%;
@@ -520,7 +598,7 @@ nav.navbar .navbar-toggler[aria-expanded="true"] .navbar-toggler-icon {
 /************ Projects Css ************/
 .contact {
   background: #516b40;
-  padding: 60px 0 200px 0;
+  padding: 60px  0;
 }
 .contact img {
   width: 92%;
@@ -592,23 +670,10 @@ nav.navbar .navbar-toggler[aria-expanded="true"] .navbar-toggler-icon {
 
 /************ Footer Css ************/
 .footer {
-  padding: 0 0 50px 0;
+  padding: 10px 0 50px 0;
   background-position: center center;
   background-size: cover;
   background-repeat: no-repeat;
-}
-.newsletter-bx {
-  background: #FFFFFF;
-  border-radius: 55px;
-  color: #263E19;
-  padding: 85px 125px;
-  margin-bottom: 80px;
-  margin-top: -122px;
-}
-.newsletter-bx h3 {
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  line-height: 1.2em;
 }
 .new-email-bx {
   background: #fff;

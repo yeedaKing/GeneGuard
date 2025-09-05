@@ -3,7 +3,8 @@ import { useState, useEffect } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
-import myPdfFile from 'C:\Users\chols\OneDrive\personal labs\ChoResume.pdf';
+import { motion } from "framer-motion";
+
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -11,7 +12,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 ).toString();
 
 export const Resume = () => {
-    const [numPages, setNumPages] = useState(null);
+    const viewerURL = "/ChoResume.pdf#zoom=page-width";
     
     const prefersReduced = typeof window !== "undefined" &&
         window.matchMedia &&
@@ -34,7 +35,6 @@ export const Resume = () => {
             },
         },
     };
-    const onDocumentLoadSuccess = ({ numPages }) => setNumPages(numPages);
 
     return (
         <section className="resume" id="resume">
@@ -50,19 +50,17 @@ export const Resume = () => {
                     >
                         <div className="resume-bx">
                             <h2>Resume</h2>
-                            <Document file="/ChoResume.pdf" onLoadSuccess={onDocumentLoadSuccess}>
-                                {Array.from(new Array(numPages || 0), (_, i) =>(
-                                    <Page
-                                        key={`page_${i + 1}`}
-                                        pageNumber={i + 1}
-                                        renderTextLayer={false}
-                                        renderAnnotationLayer={false}
-                                    />
-                                ))}
-                            </Document>
-                            <p style={{ marginTop: 12 }}>
-                                <a href="/ChoResume.pdf" download>Download PDF</a>
-                            </p>
+                            <div className="pdf-actions">
+                                <a className="btn" href="/ChoResume.pdf" target="_blank" rel="noopener">Open in new tab</a>
+                            </div>
+                        
+                            <div className="pdf-wrap">
+                                <iframe
+                                    src={viewerURL}
+                                    title="Lisa Cho - Resume"
+                                    loading="lazy"
+                                />
+                            </div>
                         </div>
                     </motion.div>
                     </Col>
