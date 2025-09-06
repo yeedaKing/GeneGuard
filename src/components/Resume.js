@@ -1,10 +1,9 @@
 import { Container, Row, Col } from "react-bootstrap";
-import { useState, useEffect } from "react";
-import { Document, Page, pdfjs } from "react-pdf";
+import { pdfjs } from "react-pdf";
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { motion } from "framer-motion";
-
+import { ResumeViewer } from "./ResumeViewer";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -12,7 +11,6 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 ).toString();
 
 export const Resume = () => {
-    const viewerURL = "/ChoResume.pdf#zoom=page-width";
     
     const prefersReduced = typeof window !== "undefined" &&
         window.matchMedia &&
@@ -46,21 +44,10 @@ export const Resume = () => {
                         whileInView="show"
                         viewport={{ once: false, amount: 0.25 }}
                         variants={container}
-                        style={{ willChange: "transform" }}
                     >
                         <div className="resume-bx">
                             <h2>Resume</h2>
-                            <div className="pdf-actions">
-                                <a className="btn" href="/ChoResume.pdf" target="_blank" rel="noopener">Open in new tab</a>
-                            </div>
-                        
-                            <div className="pdf-wrap">
-                                <iframe
-                                    src={viewerURL}
-                                    title="Lisa Cho - Resume"
-                                    loading="lazy"
-                                />
-                            </div>
+                            <ResumeViewer />
                         </div>
                     </motion.div>
                     </Col>
