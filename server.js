@@ -8,6 +8,7 @@ const app = express();
 const router = express.Router();
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cors({
   origin: [
     "http://localhost:3000",
@@ -17,9 +18,11 @@ app.use(cors({
 }));
 
 app.get("/health", (_req, res) => res.send("ok"));
-
+app.use((req, _res, next) => { console.log(req.method, req.url); next(); });
 const contactEmail = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
@@ -62,6 +65,7 @@ router.post("/contact", async (req, res) => {
         }
     });
 
+    app.get("/health", (_req, res) => res.type("text").send("ok"));
     app.use("/", router);
 
     const PORT = process.env.PORT || 5000;
