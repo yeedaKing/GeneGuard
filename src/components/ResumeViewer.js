@@ -28,7 +28,7 @@ export const ResumeViewer = () => {
 
     return (
         <div className="pdf-viewer" ref={wrapRef}>
-            {createPortal(<div className="gv-bar" style = {barStyle}>
+            {wrapRef.current && createPortal(<div className="gv-bar" style = {barStyle}>
                 <div className="gv-title">ChoResume.pdf</div>
                 <div className="gv-actions">
                     <a className="gv-action" href="/ChoResume.pdf" download aria-label="Download">
@@ -43,7 +43,7 @@ export const ResumeViewer = () => {
                         </svg>
                     </button>
                 </div>
-            </div>, document.body)}
+            </div>, wrapRef.current)}
             <div className="pdf-stage">
                 <Document file="/ChoResume.pdf" onLoadSuccess={onLoad} loading="Loading...">
                     <Page 
@@ -54,7 +54,7 @@ export const ResumeViewer = () => {
                     />
                 </Document>
             </div>
-            {createPortal(<div className="gv-bottom">
+            {wrapRef.current && createPortal(<div className="gv-bottom">
                 <div className="gv-pill">
                     <span className="gv-text">Page</span>
                     <span className="gv-page-cur">{page || 1}</span>
@@ -65,7 +65,7 @@ export const ResumeViewer = () => {
                     <span className="gv-zoom">{Math.round(zoom * 100)}%</span>
                     <button className="gv-btn" onClick={() => setZoom(z => Math.min(MAX, +(z + STEP).toFixed(2)))} aria-label="Zoom in">+</button>
                 </div>
-            </div>, document.body)}
+            </div>, wrapRef.current)}
         </div>
     );
 };
