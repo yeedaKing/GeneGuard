@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { Document, Page, pdfjs } from "react-pdf";
+import { Document, Page} from "react-pdf";
 import { createPortal } from 'react-dom'
 
-pdfjs.GlobalWorkerOptions.workerSrc =`//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
-
 export const ResumeViewer = () => {
+    const pdfPath = `${process.env.PUBLIC_URL || ""}/ChoResume.pdf`;
+
     const [numPages, setNumPages] = useState(0);
     const [page, setPage] = useState(1);
     const [zoom, setZoom] = useState(1);
@@ -31,12 +31,12 @@ export const ResumeViewer = () => {
             {wrapRef.current && createPortal(<div className="gv-bar" style = {barStyle}>
                 <div className="gv-title">ChoResume.pdf</div>
                 <div className="gv-actions">
-                    <a className="gv-action" href="/ChoResume.pdf" download aria-label="Download">
+                    <a className="gv-action" href={pdfPath} download aria-label="Download">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                            <path d="M12 3v10m0 0 4-4m-4 4-4-4M5 21h14" stroke="currentColor" strokeWidth="2" strokeLineCap="round" strokeLinejoin="round"/>
+                            <path d="M12 3v10m0 0 4-4m-4 4-4-4M5 21h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                     </a>
-                    <button className="gv-action" onClick={openPrint} aria-label="Print">
+                    <button className="gv-action" onClick={() => window.open(pdfPath, "_blank")} aria-label="Print">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                             <path d="M6 9V3h12v6M6 14h12v7H6v-7Z" stroke="currentColor" strokeWidth="2" />
                             <path d="M6 12H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2h-1" stroke="currentColor" strokeWidth="2" />                   
@@ -45,7 +45,7 @@ export const ResumeViewer = () => {
                 </div>
             </div>, wrapRef.current)}
             <div className="pdf-stage">
-                <Document file="/ChoResume.pdf" onLoadSuccess={onLoad} loading="Loading...">
+                <Document file={process.env.PUBLIC_URL + "/ChoResume.pdf"} onLoadSuccess={onLoad} onLoadError={(err) => console.error("PDF error:", err)} loading="Loading...">
                     <Page 
                         pageNumber={page}
                         width={renderedWidth}

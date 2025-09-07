@@ -107,7 +107,7 @@ export const Projects = () => {
                                     viewport={{ once: false, amount: 0.2 }}
                                     style={{ willChange: "transform" }}
                                 >
-                                    <Row className="g-4" align-items-stretch>
+                                    <Row className="g-4 align-items-stretch">
                                         {
                                             projects.map((project, index) => (
                                                 <MotionCol

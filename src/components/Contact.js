@@ -137,7 +137,7 @@ export const Contact = () => {
                                 </Col>
 
                                 <Col md={12} className="px-1">
-                                    <textArea row="6" value={formDetails.message} placeholder="Message" onChange={(e) => onFormUpdate('message', e.target.value)} />
+                                    <textarea row="6" value={formDetails.message} placeholder="Message" onChange={(e) => onFormUpdate('message', e.target.value)} />
                                     <button type="submit"><span>{buttonText}</span></button>
                                 </Col>
                                 {

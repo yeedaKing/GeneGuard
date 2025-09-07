@@ -5,10 +5,8 @@ import 'react-pdf/dist/Page/TextLayer.css';
 import { motion } from "framer-motion";
 import { ResumeViewer } from "./ResumeViewer";
 
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-    "pdfjs-dist/build/pdf.worker.min.mjs",
-    import.meta.url
-).toString();
+pdfjs.GlobalWorkerOptions.workerSrc =
+  "https://unpkg.com/pdfjs-dist@5.3.93/build/pdf.worker.min.mjs";
 
 export const Resume = () => {
     

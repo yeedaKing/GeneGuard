@@ -50,7 +50,7 @@ export const NavBar = () => {
                         <a href="https://github.com/chols8195"><img src={github} alt="" /></a>
                         <a href="https://www.instagram.com/lisa._.cho/?hl=en"><img src={instagram} alt="" /></a>
                     </div>     
-                        <Link smooth to='#connect'>
+                        <Link to='/connect'>
                             <button className="vvd"><span>Let's Connect</span></button>
                         </Link>               
                 </div>
@@ -70,7 +70,7 @@ export const NavBar = () => {
                                 <a href="https://github.com/chols8195"><img src={github} alt="" /></a>
                                 <a href="https://www.instagram.com/lisa._.cho/?hl=en"><img src={instagram} alt="" /></a>
                             </div>
-                            <Link to='#connect' onClick={() => setShowMenu(false)}>
+                            <Link to='/connect' onClick={() => setShowMenu(false)}>
                                 <button className="vvd"><span>Let's Connect</span></button>
                             </Link>
                         </span>
