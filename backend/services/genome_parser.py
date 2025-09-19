@@ -34,6 +34,5 @@ def parse_genome_file(raw_bytes: bytes, max_rsids: int = 500):
 
 # in Python REPL
 from pathlib import Path
-from services.genome_parser import parse_genome_file
 raw = Path("sample_genome.txt").read_bytes()   # any small txt
 print(parse_genome_file(raw))
