@@ -3,6 +3,10 @@ from services.risk_annotator import annotate_risks
 
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+
+import csv, io
+
 
 app = FastAPI(title="GeneGuard API", version="0.1.0")
 app.add_middleware(
@@ -30,3 +34,17 @@ async def upload_genome(disease: str, file: UploadFile = File(...)):
         "gene_count": len(genes),
         "risks": risks,
     }
+
+
+@app.get("/results/{user_id}/csv")
+def export_csv(user_id: str):
+    data = get_user(user_id)
+    if data is None:
+        raise HTTPException(status_code=404, detail="not found")
+    buffer = io.StringIO()
+    writer = csv.DictWriter(buffer, fieldnames=data['risks'][0].keys())
+    writer.writeheader()
+    writer.writerows(data['risks'])
+    buffer.seek(0)
+    return StreamingResponse(buffer, media_type="text/csv",
+                             headers={"Content-Disposition": f"attachment; filename={user_id}.csv"})
