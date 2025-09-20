@@ -35,6 +35,13 @@ export const HomePage = () => {
         }
     ];
 
+    const scrollToFeatures = () => {
+        const element = document.querySelector('#features');
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
+
     return (
         <>
             {/* Hero Section */}
@@ -53,15 +60,14 @@ export const HomePage = () => {
                                     <Link to="/auth" className="btn-primary-large">
                                         Start Analysis
                                     </Link>
-                                    <a href="#features" className="btn-secondary-large">
+                                    <button 
+                                        onClick={scrollToFeatures}
+                                        className="btn-secondary-large"
+                                        style={{ border: 'none', background: 'transparent' }}
+                                    >
                                         Learn More
-                                    </a>
+                                    </button>
                                 </div>
-                            </div>
-                        </Col>
-                        <Col lg={4} className="text-center">
-                            <div style={{ fontSize: "180px", opacity: 0.1 }}>
-                                DNA
                             </div>
                         </Col>
                     </Row>
@@ -186,11 +192,11 @@ export const HomePage = () => {
                                 <div className="pricing-amount">$0</div>
                                 <p className="pricing-subtitle">Perfect for individuals getting started</p>
                                 <ul className="pricing-features">
-                                    <li>1 genetic analysis</li>
-                                    <li>Basic health insights</li>
-                                    <li>PDF export</li>
+                                    <li>ADD DESCRIPTION</li>
+                                    <li>ADD DESCRIPTION</li>
+                                    <li>ADD DESCRIPTION</li>                                    
                                 </ul>
-                                <Link to="/auth" className="btn-secondary-large pricing-btn">
+                                <Link to="/auth" className="btn-primary-large pricing-btn featured-btn">
                                     Get Started Free
                                 </Link>
                             </div>
@@ -203,11 +209,11 @@ export const HomePage = () => {
                                 <div className="pricing-amount">$29</div>
                                 <p className="pricing-subtitle">For families planning together</p>
                                 <ul className="pricing-features">
-                                    <li>Up to 5 family members</li>
-                                    <li>Advanced genetic analysis</li>
-                                    <li>Family compatibility reports</li>
-                                    <li>AI lifestyle recommendations</li>
-                                    <li>Priority support</li>
+                                    <li>ADD DESCRIPTION</li>
+                                    <li>ADD DESCRIPTION</li>
+                                    <li>ADD DESCRIPTION</li>
+                                    <li>ADD DESCRIPTION</li>
+                                    <li>ADD DESCRIPTION</li>
                                 </ul>
                                 <Link to="/auth" className="btn-primary-large pricing-btn featured-btn">
                                     Start Family Plan

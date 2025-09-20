@@ -1,11 +1,12 @@
 import { Navbar, Container, Nav, Offcanvas } from "react-bootstrap";
 import { useState, useContext } from "react";
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import logo from '../assets/img/logo.png';
 
 export const NavBar = () => {
     const location = useLocation();
+    const navigate = useNavigate();
     const { user, logout } = useContext(AuthContext);
     const [showMenu, setShowMenu] = useState(false);
 
@@ -18,6 +19,27 @@ export const NavBar = () => {
         setShowMenu(false);
     };
 
+    // Handle hash navigation
+    const handleHashClick = (hash) => {
+        if (location.pathname !== '/') {
+            // If not on home page, navigate to home first, then scroll
+            navigate('/');
+            setTimeout(() => {
+                const element = document.querySelector(hash);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                }
+            }, 100);
+        } else {
+            // If already on home page, just scroll
+            const element = document.querySelector(hash);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+        setShowMenu(false);
+    };
+
     return (
         <Navbar expand="lg" className="fixed-top">
             <Container>
@@ -26,7 +48,7 @@ export const NavBar = () => {
                 </Navbar.Toggle>
                 
                 <Navbar.Brand as={Link} to="/">
-                    <img src={logo} alt = "Logo" className = "logo-graphic"/>
+                    <img src={logo} alt="Logo" className="logo-graphic"/>
                 </Navbar.Brand>
 
                 <Nav className="nav-links d-none d-lg-flex">
@@ -34,14 +56,26 @@ export const NavBar = () => {
                         Home
                     </Nav.Link>
                     
-                    {/* Always show informational links - scroll to sections */}
-                    <Nav.Link href="#about" className="navbar-link">
+                    {/* Updated hash links */}
+                    <Nav.Link 
+                        className="navbar-link" 
+                        onClick={() => handleHashClick('#about')}
+                        style={{ cursor: 'pointer' }}
+                    >
                         About
                     </Nav.Link>
-                    <Nav.Link href="#features" className="navbar-link">
+                    <Nav.Link 
+                        className="navbar-link"
+                        onClick={() => handleHashClick('#features')}
+                        style={{ cursor: 'pointer' }}
+                    >
                         How It Works
                     </Nav.Link>
-                    <Nav.Link href="#pricing" className="navbar-link">
+                    <Nav.Link 
+                        className="navbar-link"
+                        onClick={() => handleHashClick('#pricing')}
+                        style={{ cursor: 'pointer' }}
+                    >
                         Pricing
                     </Nav.Link>
                     
@@ -49,7 +83,7 @@ export const NavBar = () => {
                     {user && (
                         <>
                             <Nav.Link as={Link} to="/analysis" className={getActiveLink('/analysis')}>
-                                Analysis
+                                Summary
                             </Nav.Link>
                             <Nav.Link as={Link} to="/results" className={getActiveLink('/results')}>
                                 Results
@@ -96,14 +130,26 @@ export const NavBar = () => {
                                 Home
                             </Nav.Link>
                             
-                            {/* Always show informational links in mobile menu too - scroll to sections */}
-                            <Nav.Link href="#about" className="navbar-link" onClick={() => setShowMenu(false)}>
+                            {/* Updated mobile hash links */}
+                            <Nav.Link 
+                                className="navbar-link" 
+                                onClick={() => handleHashClick('#about')}
+                                style={{ cursor: 'pointer' }}
+                            >
                                 About
                             </Nav.Link>
-                            <Nav.Link href="#features" className="navbar-link" onClick={() => setShowMenu(false)}>
+                            <Nav.Link 
+                                className="navbar-link"
+                                onClick={() => handleHashClick('#features')}
+                                style={{ cursor: 'pointer' }}
+                            >
                                 How It Works
                             </Nav.Link>
-                            <Nav.Link href="#pricing" className="navbar-link" onClick={() => setShowMenu(false)}>
+                            <Nav.Link 
+                                className="navbar-link"
+                                onClick={() => handleHashClick('#pricing')}
+                                style={{ cursor: 'pointer' }}
+                            >
                                 Pricing
                             </Nav.Link>
                             
@@ -111,7 +157,7 @@ export const NavBar = () => {
                             {user && (
                                 <>
                                     <Nav.Link as={Link} to="/analysis" className={getActiveLink('/analysis')} onClick={() => setShowMenu(false)}>
-                                        Analysis
+                                        Summary
                                     </Nav.Link>
                                     <Nav.Link as={Link} to="/results" className={getActiveLink('/results')} onClick={() => setShowMenu(false)}>
                                         Results
