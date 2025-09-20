@@ -1,3 +1,5 @@
+# idea if we hardcode tips
+
 alzheimers:  # disease key (lower-case)
   default:   # tips shown when NO gene-specific entry exists
     - "Placeholder lifestyle tip for Alzheimer’s #1"

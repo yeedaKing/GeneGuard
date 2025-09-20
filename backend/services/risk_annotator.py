@@ -1,6 +1,7 @@
 # services/risk_annotator.py
 import pandas as pd
 from .adagio_loader import load_risk_table
+from services.tip_service import get_tips
 
 BINS  = [0, 0.7, 0.9, 1.01]
 LABEL = ['Low', 'Medium', 'High']
@@ -20,6 +21,7 @@ def annotate_risks(disease: str, user_genes: set[str]):
     hits.reset_index(inplace=True)
     hits.rename(columns={'index': 'gene'}, inplace=True)
 
-    # attach lifestyle tips here?
-
+    # get tips
+    hits["tips"] = hits.apply(lambda r: get_tips(r.name, disease), axis=1)
+    
     return hits.to_dict(orient='records')
