@@ -1,3 +1,13 @@
+# This data file was created for demo purposes only
+# It is NOT real genomic data
+# rsid	chromosome	position	genotype
 rs3094315	1	752566	AA
-rs12562034	1	768448	AG
-rs3934834	1	995669	CC
+rs12562034	1	768448	GG
+rs3131972	1	752721	AG
+rs148828331	1	776546	CC
+rs12124819	1	776584	GT
+rs11240777	1	797649	TT
+rs6681049	1	799675	CT
+rs4970383	1	828418	AA
+rs4475691	1	1018704	GG
+rs7533365	1	1021415	CC

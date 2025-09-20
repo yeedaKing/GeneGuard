@@ -1,9 +1,15 @@
 # services/tip_service.py
 import functools, httpx, os
+from dotenv import load_dotenv 
+
+load_dotenv() 
 
 ENDPOINT = "https://api.openai.com/v1/chat/completions"
 MODEL    = "gpt-4o-mini"
 KEY      = os.getenv("OPENAI_API_KEY")
+
+if not KEY:
+    raise RuntimeError("OPENAI_API_KEY not set")
 
 @functools.lru_cache(maxsize=2048)
 def get_tips(gene: str, disease: str) -> list[str]:
