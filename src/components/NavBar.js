@@ -1,82 +1,152 @@
 import { Navbar, Container, Nav, Offcanvas } from "react-bootstrap";
-import { useState, useEffect } from "react";
+import { useState, useContext } from "react";
+import { Link, useLocation } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
 import logo from '../assets/img/logo.png';
-import linkedIn from '../assets/img/linkedIn.svg';
-import github from '../assets/img/github.svg';
-import instagram from '../assets/img/instagram.svg';
-import { Link } from 'react-router-dom';
 
 export const NavBar = () => {
-    const [activeLink, setActiveLink] = useState('home');
-    const [scrolled, setScrolled] = useState(false);
+    const location = useLocation();
+    const { user, logout } = useContext(AuthContext);
     const [showMenu, setShowMenu] = useState(false);
 
-    useEffect(() => {
-        const onScroll = () => {
-            if (window.scrollY > 50) {
-                setScrolled(true);
-            } else {
-                setScrolled(false);
-            }
-        }
+    const getActiveLink = (path) => {
+        return location.pathname === path ? 'active navbar-link' : 'navbar-link';
+    };
 
-        window.addEventListener("scroll", onScroll);
-
-        return () => window.removeEventListener("scroll", onScroll);
-    }, [])
-
-    const onUpdateActiveLink = (value) => {
-        setActiveLink(value);
-    }
+    const handleLogout = () => {
+        logout();
+        setShowMenu(false);
+    };
 
     return (
-        <Navbar expand="lg" className = {scrolled ? "scrolled": "top"}>
+        <Navbar expand="lg" className="fixed-top">
             <Container>
-                <Navbar.Toggle className="d-lg-none" onClick= {() => setShowMenu(true)}>
+                <Navbar.Toggle className="d-lg-none" onClick={() => setShowMenu(true)}>
                     <span className="navbar-toggler-icon"></span>
                 </Navbar.Toggle>
+                
                 <Navbar.Brand as={Link} to="/">
                     <img src={logo} alt = "Logo" className = "logo-graphic"/>
                 </Navbar.Brand>
+
                 <Nav className="nav-links d-none d-lg-flex">
-                    <Nav.Link as={Link} to="/" className={activeLink === 'home' ? 'active navbar-link' : 'navbar-link'} onClick={() => onUpdateActiveLink('home')}>Home</Nav.Link>
-                    <Nav.Link as={Link} to="/resume" className={activeLink === 'resume' ? 'active navbar-link' : 'navbar-link'} onClick={() => onUpdateActiveLink('resume')}>Resume</Nav.Link>
-                    <Nav.Link as={Link} to="/skills" className={activeLink === 'skills' ? 'active navbar-link' : 'navbar-link'} onClick={() => onUpdateActiveLink('skills')}>Skills</Nav.Link>
-                    <Nav.Link as={Link} to="/project" className={activeLink === 'project' ? 'active navbar-link' : 'navbar-link'} onClick={() => onUpdateActiveLink('project')}>Projects</Nav.Link>                    
+                    <Nav.Link as={Link} to="/" className={getActiveLink('/')}>
+                        Home
+                    </Nav.Link>
+                    
+                    {/* Always show informational links - scroll to sections */}
+                    <Nav.Link href="#about" className="navbar-link">
+                        About
+                    </Nav.Link>
+                    <Nav.Link href="#features" className="navbar-link">
+                        How It Works
+                    </Nav.Link>
+                    <Nav.Link href="#pricing" className="navbar-link">
+                        Pricing
+                    </Nav.Link>
+                    
+                    {/* Only show feature links when logged in */}
+                    {user && (
+                        <>
+                            <Nav.Link as={Link} to="/analysis" className={getActiveLink('/analysis')}>
+                                Analysis
+                            </Nav.Link>
+                            <Nav.Link as={Link} to="/results" className={getActiveLink('/results')}>
+                                Results
+                            </Nav.Link>
+                            <Nav.Link as={Link} to="/groups" className={getActiveLink('/groups')}>
+                                Groups
+                            </Nav.Link>
+                        </>
+                    )}
                 </Nav>
-                <div className="nav-cta d-none d-lg-flex">
-                    <div className="social-icon">
-                        <a href="https://www.linkedin.com/in/lisa-cho-1bb639246/"><img src={linkedIn} alt="" /></a>
-                        <a href="https://github.com/chols8195"><img src={github} alt="" /></a>
-                        <a href="https://www.instagram.com/lisa._.cho/?hl=en"><img src={instagram} alt="" /></a>
-                    </div>     
-                        <Link to='/connect'>
-                            <button className="vvd"><span>Let's Connect</span></button>
-                        </Link>               
+
+                <div className="auth-buttons d-none d-lg-flex">
+                    {user ? (
+                        <>
+                            <span style={{ color: 'var(--color-light-gray)', marginRight: '16px' }}>
+                                Hi, {user.name}
+                            </span>
+                            <button className="btn-sign-in" onClick={handleLogout}>
+                                Logout
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <Link to="/auth?mode=login" className="btn-sign-in">
+                                Sign In
+                            </Link>
+                            <Link to="/auth?mode=register" className="btn-sign-up">
+                                Sign Up
+                            </Link>
+                        </>
+                    )}
                 </div>
 
-                <Navbar.Offcanvas show={showMenu} onHide={() => setShowMenu(false)} placement="start" className="nav-offcanvas d-lg-none">
+                <Navbar.Offcanvas 
+                    show={showMenu} 
+                    onHide={() => setShowMenu(false)} 
+                    placement="start" 
+                    className="nav-offcanvas d-lg-none"
+                >
                     <Offcanvas.Header closeButton closeVariant="white" />
                     <Offcanvas.Body>
                         <Nav>
-                            <Nav.Link as={Link} to="/" className={activeLink === 'home' ? 'active navbar-link' : 'navbar-link'} onClick={() => { onUpdateActiveLink('home'); setShowMenu(false); }}>Home</Nav.Link>
-                            <Nav.Link as={Link} to="/resume" className={activeLink === 'resume' ? 'active navbar-link' : 'navbar-link'} onClick={() => { onUpdateActiveLink('resume'); setShowMenu(false); }}>Resume</Nav.Link>
-                            <Nav.Link as={Link} to="/skills" className={activeLink === 'skills' ? 'active navbar-link' : 'navbar-link'} onClick={() => { onUpdateActiveLink('skills'); setShowMenu(false); }}>Skills</Nav.Link>
-                            <Nav.Link as={Link} to="/project" className={activeLink === 'project' ? 'active navbar-link' : 'navbar-link'} onClick={() => { onUpdateActiveLink('project'); setShowMenu(false); }}>Projects</Nav.Link>
+                            <Nav.Link as={Link} to="/" className={getActiveLink('/')} onClick={() => setShowMenu(false)}>
+                                Home
+                            </Nav.Link>
+                            
+                            {/* Always show informational links in mobile menu too - scroll to sections */}
+                            <Nav.Link href="#about" className="navbar-link" onClick={() => setShowMenu(false)}>
+                                About
+                            </Nav.Link>
+                            <Nav.Link href="#features" className="navbar-link" onClick={() => setShowMenu(false)}>
+                                How It Works
+                            </Nav.Link>
+                            <Nav.Link href="#pricing" className="navbar-link" onClick={() => setShowMenu(false)}>
+                                Pricing
+                            </Nav.Link>
+                            
+                            {/* Only show feature links when logged in */}
+                            {user && (
+                                <>
+                                    <Nav.Link as={Link} to="/analysis" className={getActiveLink('/analysis')} onClick={() => setShowMenu(false)}>
+                                        Analysis
+                                    </Nav.Link>
+                                    <Nav.Link as={Link} to="/results" className={getActiveLink('/results')} onClick={() => setShowMenu(false)}>
+                                        Results
+                                    </Nav.Link>
+                                    <Nav.Link as={Link} to="/groups" className={getActiveLink('/groups')} onClick={() => setShowMenu(false)}>
+                                        Groups
+                                    </Nav.Link>
+                                </>
+                            )}
                         </Nav>
-                        <span className="navbar-text">
-                            <div className="social-icon">
-                                <a href="https://www.linkedin.com/in/lisa-cho-1bb639246/"><img src={linkedIn} alt="" /></a>
-                                <a href="https://github.com/chols8195"><img src={github} alt="" /></a>
-                                <a href="https://www.instagram.com/lisa._.cho/?hl=en"><img src={instagram} alt="" /></a>
-                            </div>
-                            <Link to='/connect' onClick={() => setShowMenu(false)}>
-                                <button className="vvd"><span>Let's Connect</span></button>
-                            </Link>
-                        </span>
+                        
+                        <div className="navbar-text">
+                            {user ? (
+                                <>
+                                    <span style={{ color: 'var(--color-light-gray)', marginBottom: '12px', display: 'block' }}>
+                                        Hi, {user.name}
+                                    </span>
+                                    <button className="btn-sign-in" onClick={handleLogout}>
+                                        Logout
+                                    </button>
+                                </>
+                            ) : (
+                                <div className="auth-buttons">
+                                    <Link to="/auth?mode=login" className="btn-sign-in" onClick={() => setShowMenu(false)}>
+                                        Sign In
+                                    </Link>
+                                    <Link to="/auth?mode=register" className="btn-sign-up" onClick={() => setShowMenu(false)}>
+                                        Sign Up
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
                     </Offcanvas.Body>
                 </Navbar.Offcanvas>
             </Container>
         </Navbar>
-    )
-}
+    );
+};

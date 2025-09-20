@@ -1,27 +1,62 @@
 import { Container, Row, Col } from "react-bootstrap";
-import logo from "../assets/img/logo.png";
-import linkedIn from '../assets/img/linkedIn.svg';
-import github from '../assets/img/github.svg';
-import instagram from '../assets/img/instagram.svg';
+import { Link } from "react-router-dom";
 
 export const Footer = () => {
+    const currentYear = new Date().getFullYear();
+
     return (
         <footer className="footer">
             <Container>
                 <Row className="align-items-center">
-                    <Col sm={6}>
-                        <img src={logo} alt="Logo" />
-                    </Col>
-                    <Col sm={6} className="text-center text-sm-end">
-                        <div className="social-icon">
-                            <a href="https://www.linkedin.com/in/lisa-cho-1bb639246/"><img src={linkedIn}/></a>
-                            <a href="https://github.com/chols8195"><img src={github}/></a>
-                            <a href="https://www.instagram.com/lisa._.cho/?hl=en"><img src={instagram}/></a>
+                    <Col md={6}>
+                        <div style={{ marginBottom: '16px' }}>
+                            <h5 style={{ 
+                                color: '#fff', 
+                                marginBottom: '8px',
+                                fontSize: '20px',
+                                fontWeight: '600'
+                            }}>
+                                GeneGuard
+                            </h5>
+                            <p style={{ 
+                                color: 'var(--color-light-gray)', 
+                                fontSize: '14px',
+                                margin: '0'
+                            }}>
+                                Helping families understand their genetic health
+                            </p>
                         </div>
-                        <p>CopyRight 2025. All Right Reserved</p>
+                    </Col>
+                    <Col md={6} className="text-md-end">
+                        <p style={{ 
+                            color: 'var(--color-light-gray)', 
+                            fontSize: '12px',
+                            margin: '0'
+                        }}>
+                            © {currentYear} GeneGuard Team. Made for hackathon.
+                        </p>
+                    </Col>
+                </Row>
+                <Row className="mt-3">
+                    <Col>
+                        <div style={{
+                            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                            paddingTop: '16px'
+                        }}>
+                            <p style={{ 
+                                color: 'var(--color-light-gray)', 
+                                fontSize: '12px',
+                                textAlign: 'center',
+                                margin: '0',
+                                lineHeight: '1.4'
+                            }}>
+                                <strong>Note:</strong> This is a prototype app for educational purposes. 
+                                Not for actual medical use. Always consult healthcare professionals.
+                            </p>
+                        </div>
                     </Col>
                 </Row>
             </Container>
         </footer>
-    )
-}
+    );
+};

@@ -1,54 +1,50 @@
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { NavBar } from './components/NavBar';
-import { Banner } from './components/Banner';
-import { Skills } from './components/Skills';
-import { Projects } from './components/Projects';
-import { Contact } from './components/Contact';
+import { HomePage } from './pages/HomePage';
+import { AnalysisPage } from './pages/AnalysisPage';
+import { GroupsPage } from './pages/GroupsPage';
+import { ResultsPage } from './pages/ResultsPage';
+import { AuthPage } from './pages/AuthPage';
 import { Footer } from './components/Footer';
-import { Resume } from './components/Resume';
 
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { useEffect } from 'react';
-
-const NAV_H = 105;
-
-function SectionScrollPage() {
-  const { pathname } = useLocation();
-
-  useEffect(() => {
-    const id = pathname === '/' ? 'home' : pathname.slice(1); 
-    const el = document.getElementById(id);
-    if (el) {
-      const y = el.getBoundingClientRect().top + window.pageYOffset - NAV_H;
-      window.scrollTo({ top: y, behavior: 'smooth' });
-    }
-  }, [pathname]);
-
-  return (
-    <>
-      <NavBar />
-      <Banner />
-      <Resume />
-      <Skills />
-      <Projects />
-      <Contact />
-      <Footer />
-    </>
-  );
-}
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import { ProtectedRoute } from './components/ProtectedRoute';
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<SectionScrollPage />} />
-        <Route path="/resume" element={<SectionScrollPage />} />
-        <Route path="/skills" element={<SectionScrollPage />} />
-        <Route path="/project" element={<SectionScrollPage />} />
-        <Route path="/connect" element={<SectionScrollPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <div className="App">
+          <NavBar />
+          <main style={{ paddingTop: 'var(--nav-h)' }}>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/auth" element={<AuthPage />} />
+              
+              <Route path="/analysis" element={
+                <ProtectedRoute>
+                  <AnalysisPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/results" element={
+                <ProtectedRoute>
+                  <ResultsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/groups" element={
+                <ProtectedRoute>
+                  <GroupsPage />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </main>
+          <Footer />
+        </div>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
