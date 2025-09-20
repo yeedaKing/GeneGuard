@@ -1,0 +1,17 @@
+alzheimers:  # disease key (lower-case)
+  default:   # tips shown when NO gene-specific entry exists
+    - "Placeholder lifestyle tip for Alzheimer’s #1"
+    - "Placeholder lifestyle tip for Alzheimer’s #2"
+  APOE:      # gene-specific override
+    - "APOE-specific tip A"
+    - "APOE-specific tip B"
+
+t2d:
+  default:
+    - "Placeholder T2D tip #1"
+    - "Placeholder T2D tip #2"
+  SLC30A8:
+    - "SLC30A8-specific tip A"
+    - "SLC30A8-specific tip B"
+
+# add more diseases / genes as needed

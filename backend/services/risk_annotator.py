@@ -19,4 +19,7 @@ def annotate_risks(disease: str, user_genes: set[str]):
     hits['level'] = pd.cut(hits['risk'], bins=BINS, labels=LABEL)
     hits.reset_index(inplace=True)
     hits.rename(columns={'index': 'gene'}, inplace=True)
+
+    # attach lifestyle tips here?
+
     return hits.to_dict(orient='records')
