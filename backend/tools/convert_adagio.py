@@ -51,7 +51,14 @@ for disease in diseases:
     df.dropna(subset=["gene"], inplace=True)
 
     # 5) keep symbol + risk, sort, top 500
-    tidy = df[["gene", "risk"]].sort_values("risk", ascending=False).head(500)
+    tidy = (
+    df[["gene", "risk"]]
+      .sort_values("risk", ascending=False)
+      .drop_duplicates("gene", keep="first")   # keep top score per gene
+      .head(500)
+      .set_index("gene")
+    )
+    tidy["rank"] = tidy["risk"].rank(method="first", ascending=False).astype(int)
 
     """
     tidy["tips"] = tidy["gene"].apply(lambda g: get_tips(disease, g))

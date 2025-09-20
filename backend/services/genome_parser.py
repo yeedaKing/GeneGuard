@@ -1,6 +1,3 @@
-############ OLD / NOT USED ANYMORE ############
-
-
 # services/genome_parser.py
 import pandas as pd
 from io import BytesIO
@@ -35,7 +32,9 @@ def parse_genome_file(raw_bytes: bytes, max_rsids: int = 500):
     return genes
 
 
+"""
 # in Python REPL
 from pathlib import Path
 raw = Path("sample_genome.txt").read_bytes()   # any small txt
 print(parse_genome_file(raw))
+"""
