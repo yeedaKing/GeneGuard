@@ -22,6 +22,6 @@ def annotate_risks(disease: str, user_genes: set[str]):
     hits.rename(columns={'index': 'gene'}, inplace=True)
 
     # get tips
-    hits["tips"] = hits.apply(lambda r: get_tips(r.name, disease), axis=1)
-    
+    hits["tips"] = hits.apply(lambda r: get_tips(r["gene"], disease), axis=1)
+
     return hits.to_dict(orient='records')
