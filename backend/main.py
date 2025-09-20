@@ -12,7 +12,8 @@ from services.burden import burden_scores
 from services.risk_annotator import annotate_risks
 
 TMPDIR = Path(tempfile.gettempdir())
-SUPPORTED_DISEASES = [...]
+SUPPORTED_DISEASES = ["alzheimers", "CHD", "hypertension", "multiple_sclerosis", "obesity",
+                        "parkinsons", "stroke", "T1D", "T2D", "rheumatoid_arthritis"]
 
 app = FastAPI(title="GeneGuard API", version="0.2.0")
 app.add_middleware(
