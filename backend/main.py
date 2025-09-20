@@ -16,7 +16,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-SUPPORTED_DISEASES = ["alzheimers", "t2d", "ra"]  # placeholder
+SUPPORTED_DISEASES = ["alzheimers", "CHD", "hypertension", "multiple_sclerosis",
+                    "obesity", "parkinsons", "stroke", "T1D", "T2D", "rheumatoid_arthritis"]
 
 @app.get("/diseases")
 def list_diseases():
