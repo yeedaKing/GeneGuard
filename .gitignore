@@ -122,3 +122,5 @@ test_data/real/
 !config/example.json
 !test_data/example/
 >>>>>>> frontend
+.venv/
+* 2.*
