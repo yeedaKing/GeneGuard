@@ -23,7 +23,7 @@
   --color-dark-blue: #244C66;
   --color-teal: #407D6C;
   --color-sage: #7DB290;
-  --nav-h: 80px;
+  --nav-h: 90px;
 }
 
 /* Default CSS */
@@ -103,7 +103,7 @@ nav.navbar {
   --bs-navbar-active-color: #fff;
   --bs-navbar-brand-color: var(--color-light-gray);
   --bs-navbar-toggler-border-color: rgba(255,255,255,.35);
-  padding: 15px 0;
+  padding: 0;
   position: fixed;
   width: 100%;
   height: var(--nav-h);
@@ -125,6 +125,59 @@ nav.navbar > .container {
   grid-template-columns: auto 1fr auto;
   align-items: center;
   column-gap: 32px;
+  height: 100%;
+}
+
+nav.navbar .navbar-brand {
+  margin-right: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+nav.navbar a.navbar-brand img.logo-graphic,
+nav.navbar .navbar-brand img.logo-graphic {
+  height: 90px;
+  width: auto;
+  display: block;
+  margin: -5px auto 0 0;
+}
+
+.nav-offcanvas {
+  background-color: var(--color-dark-blue) !important;
+}
+
+.nav-offcanvas .offcanvas-header {
+  background-color: var(--color-dark-blue);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-offcanvas .offcanvas-body {
+  background-color: var(--color-dark-blue);
+  color: #fff;
+}
+
+.nav-offcanvas .nav-link {
+  color: var(--color-light-gray) !important;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-offcanvas .nav-link:hover {
+  color: #fff !important;
+}
+
+.nav-offcanvas .navbar-text {
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-offcanvas .btn-close {
+  filter: invert(1);
 }
 
 nav.navbar .navbar-collapse { 
@@ -154,14 +207,6 @@ nav.navbar .navbar-text {
   align-items: center;
   gap: 12px;
   margin-left: 0;
-}
-
-nav.navbar a.navbar-brand img.logo-graphic {
-  height: 80px;
-  width: auto;
-  display: block;
-  margin-top: -5px;
-  margin-left: 20px;
 }
 
 nav.navbar .nav-links {
@@ -546,7 +591,7 @@ nav.navbar .navbar-nav a.nav-link.navbar-link.active {
 
 /* Features Section */
 .features {
-  padding: 100px 0;
+  padding-bottom: 100px;
   background: var(--color-blue-gray);
 }
 
@@ -567,6 +612,12 @@ nav.navbar .navbar-nav a.nav-link.navbar-link.active {
   transition: all 0.3s ease;
   height: 100%;
   backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  overflow: hidden;
+  width: 100%;
 }
 
 .feature-card:hover {
@@ -577,17 +628,29 @@ nav.navbar .navbar-nav a.nav-link.navbar-link.active {
 }
 
 .feature-icon {
-  width: 80px;
-  height: 80px;
-  background: #fff;
-  border-radius: 50%;
+  width: 175px;
+  height: 175px;
+  background: url('./assets/img/jellyfish.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 24px;
-  font-size: 36px;
-  color: var(--color-dark-blue);
-  font-weight: bold;
+  margin: 0 auto 24px auto;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.feature-icon img {
+  width: 65px;
+  height: 65px;
+  object-fit: contain;
+  position: absolute;
+  top: 27%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
 }
 
 .feature-card h3 {
@@ -595,12 +658,17 @@ nav.navbar .navbar-nav a.nav-link.navbar-link.active {
   font-size: 24px;
   font-weight: 600;
   margin-bottom: 16px;
+  width: 100%;
+  word-wrap: break-word;
 }
 
 .feature-card p {
   color: var(--color-light-gray);
   font-size: 16px;
   line-height: 1.6;
+  width: 100%;
+  word-wrap: break-word;
+  margin: 0;
 }
 
 /* File Upload Section */
@@ -1324,16 +1392,24 @@ nav.navbar .navbar-nav a.nav-link.navbar-link.active {
   font-weight: bold;
 }
 
+.value-icon img {
+  width: 250px;
+  height: 250px;
+  display: block;
+  margin: 0 auto;
+  object-fit: contain;
+}
+
 .value-title {
   color: #fff;
   margin-bottom: 12px;
-  font-size: 18px;
+  font-size: 24px;
   font-weight: 600;
 }
 
 .value-description {
   color: var(--color-light-gray);
-  font-size: 14px;
+  font-size: 18px;
   line-height: 1.4;
 }
 
@@ -1348,6 +1424,16 @@ nav.navbar .navbar-nav a.nav-link.navbar-link.active {
   margin-bottom: 20px;
   color: var(--color-light-gray);
   font-weight: bold;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.process-icon img {
+  width: 250px;
+  height: 250px;
+  display: block;
+  margin: 0 auto;
+  object-fit: contain;
 }
 
 .process-title {

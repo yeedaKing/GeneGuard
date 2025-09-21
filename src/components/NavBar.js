@@ -40,6 +40,15 @@ export const NavBar = () => {
         setShowMenu(false);
     };
 
+    const handleLogoClick = (e) => {
+        e.preventDefault();
+        if (location.pathname !== '/') {
+            navigate('/');
+        } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
+
     return (
         <Navbar expand="lg" className="fixed-top">
             <Container>
@@ -47,7 +56,7 @@ export const NavBar = () => {
                     <span className="navbar-toggler-icon"></span>
                 </Navbar.Toggle>
                 
-                <Navbar.Brand as={Link} to="/">
+                <Navbar.Brand onClick={handleLogoClick} as={Link} to="/">
                     <img src={logo} alt="Logo" className="logo-graphic"/>
                 </Navbar.Brand>
 
