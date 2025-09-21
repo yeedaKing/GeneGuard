@@ -707,6 +707,16 @@ nav.navbar .navbar-nav a.nav-link.navbar-link.active {
   font-weight: bold;
 }
 
+.upload-icon img {
+  width: 65px;
+  height: 65px;
+  object-fit: contain;
+  position: absolute;
+  top: 27%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
 .upload-area h3 {
   color: #fff;
   font-size: 24px;

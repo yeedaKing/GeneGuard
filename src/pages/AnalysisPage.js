@@ -1,28 +1,41 @@
-import { useState, useContext } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { Container, Row, Col, Alert } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { AuthContext } from '../context/AuthContext';
 import { api, validateGenomicFile } from '../services/api';
 
 export const AnalysisPage = () => {
-    const { user } = useContext(AuthContext);
     const navigate = useNavigate();
     
     const [file, setFile] = useState(null);
+    const [disease, setDisease] = useState('');
+    const [diseases, setDiseases] = useState([]);
     const [uploading, setUploading] = useState(false);
-    const [analyzing, setAnalyzing] = useState(false);
     const [error, setError] = useState('');
     const [dragOver, setDragOver] = useState(false);
 
+    useEffect(() => {
+        loadDiseases();
+    }, []);
+
+    const loadDiseases = async () => {
+        try {
+            const response = await api.getDiseases();
+            setDiseases(response.diseases || []);
+            if (response.diseases?.length > 0) {
+                setDisease(response.diseases[0]);
+            }
+        } catch (err) {
+            setError('Failed to load diseases: ' + err.message);
+        }
+    };
+
     const handleFileSelect = (selectedFile) => {
         const validation = validateGenomicFile(selectedFile);
-        
         if (!validation.isValid) {
             setError(validation.errors.join(', '));
             return;
         }
-        
         setFile(selectedFile);
         setError('');
     };
@@ -30,11 +43,8 @@ export const AnalysisPage = () => {
     const handleDrop = (e) => {
         e.preventDefault();
         setDragOver(false);
-        
         const droppedFile = e.dataTransfer.files[0];
-        if (droppedFile) {
-            handleFileSelect(droppedFile);
-        }
+        if (droppedFile) handleFileSelect(droppedFile);
     };
 
     const handleDragOver = (e) => {
@@ -48,52 +58,28 @@ export const AnalysisPage = () => {
     };
 
     const startAnalysis = async () => {
-        if (!file || !user) return;
+        if (!file || !disease) {
+            setError('Please select both a file and disease');
+            return;
+        }
 
         setUploading(true);
         setError('');
 
         try {
-            // Upload file first
-            console.log('Uploading file...');
-            const uploadResult = await api.genomics.uploadFile(file, user.id);
-            
-            setUploading(false);
-            setAnalyzing(true);
-
-            // Start analysis
-            console.log('Starting analysis...');
-            const analysisResult = await api.genomics.analyzeGenome({
-                fileId: uploadResult.fileId,
-                userId: user.id,
-                analysisType: 'comprehensive'
+            const result = await api.uploadGenome(file, disease);
+            // Navigate to results with the user_id
+            navigate(`/results?user_id=${result.user_id}`, { 
+                state: { result }
             });
-
-            // Wait for results (this is mocked)
-            console.log('Getting results...');
-            const results = await api.genomics.getResults(analysisResult.analysisId);
-            
-            // Store results in localStorage for demo
-            localStorage.setItem('analysisResults', JSON.stringify(results));
-            
-            // Navigate to results page
-            navigate('/results');
-
         } catch (err) {
-            console.error('Analysis error:', err);
-            setError('Something went wrong. Please try again.');
+            setError(err.message || 'Analysis failed');
+        } finally {
             setUploading(false);
-            setAnalyzing(false);
         }
     };
 
-    const resetUpload = () => {
-        setFile(null);
-        setError('');
-        setUploading(false);
-        setAnalyzing(false);
-    };
-
+    // Keep all your existing JSX but update the form section:
     return (
         <section className="upload-section">
             <Container>
@@ -113,21 +99,38 @@ export const AnalysisPage = () => {
                             }}>
                                 Upload Your Genetic Data
                             </h1>
-                            <p style={{ 
-                                color: 'var(--color-light-gray)', 
-                                textAlign: 'center', 
-                                marginBottom: '48px',
-                                fontSize: '18px'
+
+                            {error && <Alert variant="danger" className="mb-4">{error}</Alert>}
+
+                            {/* Disease Selection */}
+                            <div style={{
+                                background: 'rgba(255, 255, 255, 0.05)',
+                                borderRadius: '12px',
+                                padding: '24px',
+                                marginBottom: '32px'
                             }}>
-                                Upload your genomic file to get personalized health insights and risk assessments.
-                            </p>
+                                <label className="form-label">Select Disease for Analysis</label>
+                                <select 
+                                    value={disease}
+                                    onChange={(e) => setDisease(e.target.value)}
+                                    className="form-input"
+                                    style={{ 
+                                        background: 'rgba(255, 255, 255, 0.1)',
+                                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                                        color: '#fff',
+                                        borderRadius: '8px',
+                                        padding: '12px 16px'
+                                    }}
+                                >
+                                    {diseases.map(d => (
+                                        <option key={d} value={d}>
+                                            {d.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
 
-                            {error && (
-                                <Alert variant="danger" className="mb-4">
-                                    {error}
-                                </Alert>
-                            )}
-
+                            {/* File Upload Area */}
                             {!file ? (
                                 <div
                                     className={`upload-area ${dragOver ? 'dragover' : ''}`}
@@ -136,20 +139,16 @@ export const AnalysisPage = () => {
                                     onDragLeave={handleDragLeave}
                                     onClick={() => document.getElementById('file-input').click()}
                                 >
-                                    <div className="upload-icon">ADD ICON</div>
+                                    <div className="upload-icon"></div>
                                     <h3>Drag & Drop Your File Here</h3>
                                     <p>Or click to browse files</p>
-                                    <p style={{ 
-                                        fontSize: '14px', 
-                                        opacity: '0.7', 
-                                        marginTop: '16px' 
-                                    }}>
-                                        Supported: .vcf, .txt, .csv, .json files up to 50MB
+                                    <p style={{ fontSize: '14px', opacity: '0.7', marginTop: '16px' }}>
+                                        Supported: .txt, .tsv, .vcf, .vcf.gz files up to 50MB
                                     </p>
                                     <input
                                         id="file-input"
                                         type="file"
-                                        accept=".vcf,.txt,.csv,.json"
+                                        accept=".txt,.tsv,.vcf,.vcf.gz"
                                         onChange={(e) => handleFileSelect(e.target.files[0])}
                                         style={{ display: 'none' }}
                                     />
@@ -165,99 +164,28 @@ export const AnalysisPage = () => {
                                         File Ready for Analysis
                                     </h4>
                                     <p style={{ color: 'var(--color-light-gray)', marginBottom: '24px' }}>
-                                        <strong>{file.name}</strong>
-                                        <br />
-                                        Size: {(file.size / (1024 * 1024)).toFixed(2)} MB
+                                        <strong>{file.name}</strong><br />
+                                        Size: {(file.size / (1024 * 1024)).toFixed(2)} MB<br />
+                                        Disease: {disease.replace(/_/g, ' ')}
                                     </p>
                                     
-                                    {!uploading && !analyzing && (
-                                        <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                                            <button 
-                                                className="btn-primary-large"
-                                                onClick={startAnalysis}
-                                            >
+                                    {uploading ? (
+                                        <div style={{ color: 'var(--color-sage)' }}>
+                                            <div className="loading" style={{ margin: '0 auto 16px' }}></div>
+                                            <p>Analyzing your genetic data...</p>
+                                        </div>
+                                    ) : (
+                                        <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+                                            <button className="btn-primary-large" onClick={startAnalysis}>
                                                 Start Analysis
                                             </button>
-                                            <button 
-                                                className="btn-secondary-large"
-                                                onClick={resetUpload}
-                                            >
+                                            <button className="btn-secondary-large" onClick={() => setFile(null)}>
                                                 Choose Different File
                                             </button>
                                         </div>
                                     )}
-
-                                    {uploading && (
-                                        <div style={{ color: 'var(--color-sage)' }}>
-                                            <div className="loading" style={{ margin: '0 auto 16px' }}></div>
-                                            <p>Uploading file...</p>
-                                        </div>
-                                    )}
-
-                                    {analyzing && (
-                                        <div style={{ color: 'var(--color-sage)' }}>
-                                            <div className="loading" style={{ margin: '0 auto 16px' }}></div>
-                                            <p>Analyzing your genetic data...</p>
-                                            <p style={{ 
-                                                fontSize: '14px', 
-                                                opacity: '0.8', 
-                                                marginTop: '8px' 
-                                            }}>
-                                                This usually takes 2-3 minutes...
-                                            </p>
-                                        </div>
-                                    )}
                                 </div>
                             )}
-                        </motion.div>
-                    </Col>
-                </Row>
-
-                {/* Information Section */}
-                <Row className="mt-5">
-                    <Col>
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6, delay: 0.3 }}
-                            style={{
-                                background: 'rgba(255, 255, 255, 0.05)',
-                                borderRadius: '12px',
-                                padding: '32px'
-                            }}
-                        >
-                            <h3 style={{ color: '#fff', marginBottom: '24px', textAlign: 'center' }}>
-                                What Happens During Analysis?
-                            </h3>
-                            <Row>
-                                <Col md={4} className="text-center mb-4">
-                                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>ADD ICON</div>
-                                    <h5 style={{ color: 'var(--color-sage)', marginBottom: '12px' }}>
-                                        Variant Detection
-                                    </h5>
-                                    <p style={{ color: 'var(--color-light-gray)', fontSize: '14px' }}>
-                                        We scan your genetic variants against disease databases
-                                    </p>
-                                </Col>
-                                <Col md={4} className="text-center mb-4">
-                                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>ADD ICON</div>
-                                    <h5 style={{ color: 'var(--color-sage)', marginBottom: '12px' }}>
-                                        Risk Calculation
-                                    </h5>
-                                    <p style={{ color: 'var(--color-light-gray)', fontSize: '14px' }}>
-                                        Calculate personalized risk scores for genetic conditions
-                                    </p>
-                                </Col>
-                                <Col md={4} className="text-center mb-4">
-                                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>ADD ICON</div>
-                                    <h5 style={{ color: 'var(--color-sage)', marginBottom: '12px' }}>
-                                        AI Recommendations
-                                    </h5>
-                                    <p style={{ color: 'var(--color-light-gray)', fontSize: '14px' }}>
-                                        Generate actionable lifestyle and health recommendations
-                                    </p>
-                                </Col>
-                            </Row>
                         </motion.div>
                     </Col>
                 </Row>
