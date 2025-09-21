@@ -27,12 +27,16 @@ export const AnalysisPage = () => {
 
     const loadDiseases = async () => {
         try {
+            console.log('Calling getDiseases...');
             const response = await api.getDiseases();
+            console.log('Response received:', response);
+            console.log('Diseases array:', response.diseases);
             setDiseases(response.diseases || []);
             if (response.diseases?.length > 0) {
                 setDisease(response.diseases[0]);
             }
         } catch (err) {
+            console.log('Error in loadDiseases:', err);
             setError('Failed to load diseases: ' + err.message);
         }
     };
