@@ -1,5 +1,6 @@
 import { Container, Row, Col } from "react-bootstrap";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import uploadImg from "../assets/img/upload.png";
 import familyImg from "../assets/img/family.png";
 import tipsImg from "../assets/img/tips.png";
@@ -54,6 +55,25 @@ export const HomePage = () => {
         }
     };
 
+    const fadeInUp = {
+        hidden: { opacity: 0, y: 60 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: { duration: 0.6, ease: "easeOut" }
+        }
+    };
+
+    const staggerContainer = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.2
+            }
+        }
+    };
+
     return (
         <>
             {/* Hero Section */}
@@ -87,19 +107,28 @@ export const HomePage = () => {
             </section>
 
             {/* About Section */}
-            <section id="about" className="about-section">
+            <motion.section 
+                id="about"
+                className="about-section"
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: false, amount: 0.1 }}
+                variants={ staggerContainer }
+            >
                 <Container>
                     <Row>
                         <Col lg={8} className="mx-auto text-center">
-                            <h2 className="section-title">About GeneGuard</h2>
-                            <p className="section-description">
+                            <motion.h2 className="section-title" variants={ fadeInUp }>
+                                About GeneGuard
+                            </motion.h2>
+                            <motion.p className="section-description" variants={ fadeInUp }>
                                 GeneGuard helps families understand their genetic health through AI-powered analysis. 
                                 Our mission is to make genetic insights accessible, understandable, and actionable 
                                 for better family health planning and decision-making.
-                            </p>
+                            </motion.p>
                             <Row className="mt-5">
                                 <Col md={4} className="mb-4">
-                                    <div className="value-prop text-center">
+                                    <motion.div className="value-prop text-center" variants={ fadeInUp }>
                                         <div className="value-icon">
                                             <img src={shieldImg} alt="SHIELD"/>
                                         </div>
@@ -107,10 +136,10 @@ export const HomePage = () => {
                                         <p className="value-description">
                                             Your genetic data is encrypted and never shared without your permission
                                         </p>
-                                    </div>
+                                    </motion.div>
                                 </Col>
                                 <Col md={4} className="mb-4">
-                                    <div className="value-prop text-center">
+                                    <motion.div className="value-prop text-center" variants={ fadeInUp }>
                                         <div className="value-icon">
                                             <img src={brainImg} alt="BRAIN"/>
                                         </div>
@@ -118,10 +147,10 @@ export const HomePage = () => {
                                         <p className="value-description">
                                             Advanced algorithms analyze your data against the latest research
                                         </p>
-                                    </div>
+                                    </motion.div>
                                 </Col>
                                 <Col md={4} className="mb-4">
-                                    <div className="value-prop text-center">
+                                    <motion.div className="value-prop text-center" variants={ fadeInUp }>
                                         <div className="value-icon">
                                             <img src={heartImg} alt="HEART"/>
                                         </div>
@@ -129,23 +158,30 @@ export const HomePage = () => {
                                         <p className="value-description">
                                             Built specifically for families planning their health together
                                         </p>
-                                    </div>
+                                    </motion.div>
                                 </Col>
                             </Row>
                         </Col>
                     </Row>
                 </Container>
-            </section>
+           </motion.section>
 
             {/* How It Works Section */}
-            <section className="features" id="features">
+            <motion.section 
+                className="features" 
+                id="features"
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: false, amount: 0.2 }}
+                variants={staggerContainer}
+            >
                 <Container>
                     <div>
-                        <h2>How GeneGuard Works</h2>
+                        <motion.h2 variants={ fadeInUp }>How GeneGuard Works</motion.h2>
                         <Row className="g-4">
                             {features.map((feature, index) => (
                                 <Col key={index} md={6} lg={4}>
-                                    <div className="feature-card">
+                                    <motion.div className="feature-card" variants={ fadeInUp } whileHover={{ y: -8 }} transition={{ duration: 0.2 }}>
                                         <div className="feature-icon">
                                             <img 
                                                 src={feature.imgUrl}
@@ -154,67 +190,90 @@ export const HomePage = () => {
                                         </div>
                                         <h3>{feature.title}</h3>
                                         <p>{feature.description}</p>
-                                    </div>
+                                    </motion.div>
                                 </Col>
                             ))}
                         </Row>
                     </div>
                 </Container>
-            </section>
+            </motion.section>
 
             {/* Process Section */}
-            <section className="process-section">
+            <motion.section 
+                className="process-section"
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: false, amount: 0.2 }}
+                variants={staggerContainer}
+            >
                 <Container>
                     <div>
-                        <h2 className="section-title-white text-center">Simple 3-Step Process</h2>
+                        <motion.h2 className="section-title-white text-center" variants={ fadeInUp }>
+                            Simple 3-Step Process
+                        </motion.h2>
                         <Row className="g-4">
                             <Col md={4} className="text-center">
-                                <div className="process-icon">
-                                    <img src={fileImg} alt="Upload" />
-                                </div>
-                                <h4 className="process-title">1. Upload Your Data</h4>
-                                <p className="process-description">
-                                    Upload your genomic file securely to our platform
-                                </p>
+                                <motion.div variants={ fadeInUp }>
+                                    <div className="process-icon">
+                                        <img src={fileImg} alt="Upload" />
+                                    </div>
+                                    <h4 className="process-title">1. Upload Your Data</h4>
+                                    <p className="process-description">
+                                        Upload your genomic file securely to our platform
+                                    </p>
+                                </motion.div>
                             </Col>
                             <Col md={4} className="text-center">
-                                <div className="process-icon">
-                                    <img src={aiImg} alt="AI" />
-                                </div>
-                                <h4 className="process-title">2. AI Analysis</h4>
-                                <p className="process-description">
-                                    Our system analyzes your variants against disease databases and research
-                                </p>
+                                <motion.div variants={ fadeInUp }>
+                                    <div className="process-icon">
+                                        <img src={aiImg} alt="AI" />
+                                    </div>
+                                    <h4 className="process-title">2. AI Analysis</h4>
+                                    <p className="process-description">
+                                        Our system analyzes your variants against disease databases and research
+                                    </p>
+                                </motion.div>
                             </Col>
                             <Col md={4} className="text-center">
-                                <div className="process-icon">
-                                    <img src={reportImg} alt="Report" />
-                                </div>
-                                <h4 className="process-title">3. Get Your Report</h4>
-                                <p className="process-description">
-                                    Receive clear risk assessments and personalized health recommendations
-                                </p>
+                                <motion.div variants={ fadeInUp }>
+                                    <div className="process-icon">
+                                        <img src={reportImg} alt="Report" />
+                                    </div>
+                                    <h4 className="process-title">3. Get Your Report</h4>
+                                    <p className="process-description">
+                                        Receive clear risk assessments and personalized health recommendations
+                                    </p>
+                                </motion.div>
                             </Col>
                         </Row>
                     </div>
                 </Container>
-            </section>
+            </motion.section>
 
             {/* Pricing Section */}
-            <section id="pricing" className="pricing-section">
+            <motion.section 
+                id="pricing" 
+                className="pricing-section"
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: false, amount: 0.2 }}
+                variants={staggerContainer}
+            >
                 <Container>
                     <Row className="text-center mb-5">
                         <Col>
-                            <h2 className="section-title">Simple, Family-Friendly Pricing</h2>
-                            <p className="section-description pricing-intro">
+                            <motion.h2 className="section-title" variants={ fadeInUp }>
+                                Simple, Family-Friendly Pricing
+                            </motion.h2>
+                            <motion.p className="section-description pricing-intro" variants={ fadeInUp }>
                                 Get started for free and upgrade as your family grows.
-                            </p>
+                            </motion.p>
                         </Col>
                     </Row>
                     
                     <Row className="justify-content-center">
                         <Col lg={4} md={6} className="mb-4">
-                            <div className="pricing-card">
+                            <motion.div className="pricing-card" variants={ fadeInUp }>
                                 <h4 className="pricing-tier">Free</h4>
                                 <div className="pricing-amount">$0</div>
                                 <p className="pricing-subtitle">Perfect for individuals getting started</p>
@@ -228,11 +287,11 @@ export const HomePage = () => {
                                 <Link to="/auth" className="btn-primary-large pricing-btn featured-btn">
                                     Get Started Free
                                 </Link>
-                            </div>
+                            </motion.div>
                         </Col>
                         
                         <Col lg={4} md={6} className="mb-4">
-                            <div className="pricing-card featured">
+                            <motion.div className="pricing-card featured" variants={ fadeInUp }>
                                 <div className="pricing-badge">RECOMMENDED</div>
                                 <h4 className="pricing-tier">Family Plan</h4>
                                 <div className="pricing-amount">$10</div>
@@ -249,14 +308,20 @@ export const HomePage = () => {
                                 <Link to="/auth" className="btn-primary-large pricing-btn featured-btn">
                                     Start Family Plan
                                 </Link>
-                            </div>
+                            </motion.div>
                         </Col>
                     </Row>
                 </Container>
-            </section>
+            </motion.section>
 
             {/* Final CTA Section */}
-            <section className="final-cta">
+            <motion.section 
+                className="final-cta"
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: false, amount: 0.5 }}
+                variants={fadeInUp}
+            >
                 <Container>
                     <Row className="text-center">
                         <Col>
@@ -272,7 +337,7 @@ export const HomePage = () => {
                         </Col>
                     </Row>
                 </Container>
-            </section>
+            </motion.section>
         </>
     );
 };

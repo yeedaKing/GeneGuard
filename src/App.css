@@ -41,7 +41,7 @@ body {
   font-weight: 400;
   overflow-x: hidden;
   position: relative;
-  background-color: var(--color-dark-blue) !important;
+  background-color: var(--color-blue-gray) !important;
   color: #fff !important;
   font-family: 'Centra', sans-serif !important;
 }
@@ -591,7 +591,7 @@ nav.navbar .navbar-nav a.nav-link.navbar-link.active {
 
 /* Features Section */
 .features {
-  padding-bottom: 100px;
+  padding: 150px 0 120px;
   background: var(--color-blue-gray);
 }
 
@@ -1360,7 +1360,7 @@ nav.navbar .navbar-nav a.nav-link.navbar-link.active {
 
 /* About Section */
 .about-section {
-  padding: 100px 0 0px;
+  padding: 150px 0 120px;
   background: var(--color-blue-gray);
 }
 
@@ -1385,7 +1385,7 @@ nav.navbar .navbar-nav a.nav-link.navbar-link.active {
 .section-title {
   color: #fff;
   margin-bottom: 40px;
-  font-size: 42px;
+  font-size: 56px;
   font-weight: 700;
 }
 
@@ -1398,7 +1398,7 @@ nav.navbar .navbar-nav a.nav-link.navbar-link.active {
 
 .section-description {
   color: var(--color-light-gray);
-  font-size: 18px;
+  font-size: 22px;
   line-height: 1.6;
   margin-bottom: 32px;
 }
@@ -1433,7 +1433,7 @@ nav.navbar .navbar-nav a.nav-link.navbar-link.active {
 
 /* Process Section */
 .process-section {
-  padding: 100px 0;
+  padding: 150px 0 120px;
   background: var(--color-teal);
 }
 
@@ -1476,6 +1476,7 @@ nav.navbar .navbar-nav a.nav-link.navbar-link.active {
 .pricing-intro {
   max-width: 600px;
   margin: 0 auto 60px;
+  font-size: 22px;
 }
 
 .pricing-card {
