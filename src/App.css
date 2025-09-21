@@ -580,7 +580,7 @@ nav.navbar .navbar-nav a.nav-link.navbar-link.active {
 
 .hero h1 {
   color: var(--text-primary);
-  font-size: clamp(48px, 6vw, 72px);
+  font-size: clamp(48px, 6vw, 100px);
   font-weight: 700;
   line-height: 1.1;
   margin-bottom: 24px;
@@ -589,17 +589,18 @@ nav.navbar .navbar-nav a.nav-link.navbar-link.active {
 
 .hero .subtitle {
   color: var(--color-light-gray);
-  font-size: clamp(20px, 2.5vw, 28px);
+  font-size: clamp(20px, 2.5vw, 35px);
   font-weight: 500;
   margin-bottom: 16px;
+  max-width: 1000px;
 }
 
 .hero p {
   color: var(--color-light-gray);
-  font-size: 18px;
+  font-size: 20px;
   line-height: 1.6;
   margin-bottom: 40px;
-  max-width: 600px;
+  max-width: 950px;
 }
 
 .hero .cta-buttons {
