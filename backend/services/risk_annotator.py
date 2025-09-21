@@ -28,10 +28,13 @@ def annotate_risks(disease: str, user_genes: set[str]):
     # rank-based level assignment
     n = len(hits)
     ranks = np.arange(n)        # 0, 1, 2, …
-    level = np.full(n, "Low", dtype=object)   # default Low
-    level[ranks < 300] = "Medium"
-    level[ranks < 100] = "High"
-    hits["level"] = level
+
+    hits["level"] = pd.cut(
+        hits["rank"],
+        bins=[0, 100, 300, 1_000],       # 1-100 High, 101-300 Medium, 301+ Low
+        labels=["High", "Medium", "Low"],
+        right=True,  # include upper edge
+    )
 
     # attach tips
     hits["tips"] = hits.apply(lambda r: get_tips(r["gene"], disease), axis=1)
