@@ -1,4 +1,4 @@
-import functools, httpx, os, random, datetime
+import functools, httpx, os, random, datetime, re
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -15,11 +15,12 @@ def get_tips(gene: str, disease: str) -> list[str]:
     seed = datetime.date.today().isoformat()
     prompt = (
         f"You are a health scientist.\n"
-        f"Today is {seed}. Give **exactly two** concise, evidence-based lifestyle "
-        f"actions that could reduce {disease} risk **specifically for carriers of {gene} variants**. "
-        f"Reference the biological pathway or mechanism if known. "
-        f"Don’t repeat phrases like 'Regular physical activity' more than once across runs. "
-        f"Label them 1. and 2. and cite authoritative orgs (WHO, NIH, CDC) in parentheses."
+        f"Today is {seed}. Give exactly **five distinct, concise, and evidence-based lifestyle actions** "
+        f"that could reduce {disease} risk specifically for carriers of {gene} variants.\n"
+        f"Number them 1. to 5. without any introductory text or bullets. "
+        f"Each recommendation should cite a known biological pathway or mechanism if applicable, "
+        f"and include authoritative orgs (e.g., WHO, NIH, CDC) in parentheses.\n"
+        f"Avoid generic repetition across tips (e.g., don’t say 'exercise regularly' more than once)."
     )
 
     headers = {"Authorization": f"Bearer {KEY}"}
@@ -34,7 +35,11 @@ def get_tips(gene: str, disease: str) -> list[str]:
     resp.raise_for_status()
     text = resp.json()["choices"][0]["message"]["content"]
 
-    # simple post-shuffle to mix order
-    lines = [s.strip("• ").strip() for s in text.split("\n") if s.strip()]
-    # random.shuffle(lines)
-    return lines[:2]  # guarantee exactly two
+    res = []
+    for s in text.split("\n"):
+        s = re.sub(r"^[•\-\d\. ]+\s*", "", s.strip())
+        if s:
+            res.append(s)
+
+    random.shuffle(res)
+    return res[:5]
