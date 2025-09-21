@@ -3,9 +3,11 @@ import { Container, Row, Col, Alert } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { api, validateGenomicFile } from '../services/api';
+import { useAnalysis } from '../context/AnalysisContext';
 
 export const AnalysisPage = () => {
     const navigate = useNavigate();
+    const { saveAnalysisResults, hasResults, currentAnalysis } = useAnalysis();
     
     const [file, setFile] = useState(null);
     const [disease, setDisease] = useState('');
@@ -68,10 +70,9 @@ export const AnalysisPage = () => {
 
         try {
             const result = await api.uploadGenome(file, disease);
-            // Navigate to results with the user_id
-            navigate(`/results?user_id=${result.user_id}`, { 
-                state: { result }
-            });
+
+            saveAnalysisResults(result);
+            navigate('/summary');
         } catch (err) {
             setError(err.message || 'Analysis failed');
         } finally {
@@ -99,6 +100,23 @@ export const AnalysisPage = () => {
                             }}>
                                 Upload Your Genetic Data
                             </h1>
+                            
+                            {hasResults() && (
+                                <Alert variant="info" className="mb-4">
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span>
+                                            You have previous analysis results for {currentAnalysis?.disease}. 
+                                        </span>
+                                        <button 
+                                            className="btn-secondary-large"
+                                            onClick={() => navigate('/summary')}
+                                            style={{ marginLeft: '16px', padding: '8px 16px', fontSize: '14px' }}
+                                        >
+                                            View Results
+                                        </button>
+                                    </div>
+                                </Alert>
+                            )}                            
 
                             {error && <Alert variant="danger" className="mb-4">{error}</Alert>}
 
@@ -123,7 +141,15 @@ export const AnalysisPage = () => {
                                     }}
                                 >
                                     {diseases.map(d => (
-                                        <option key={d} value={d}>
+                                        <option 
+                                            key={d} 
+                                            value={d}
+                                            style={{
+                                                background: 'var(--color-blue-gray)',
+                                                color: '#fff',
+                                                padding: '8px'
+                                            }}
+                                        >
                                             {d.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                                         </option>
                                     ))}
@@ -170,7 +196,7 @@ export const AnalysisPage = () => {
                                     </p>
                                     
                                     {uploading ? (
-                                        <div style={{ color: 'var(--color-sage)' }}>
+                                        <div style={{ color: '#fff' }}>
                                             <div className="loading" style={{ margin: '0 auto 16px' }}></div>
                                             <p>Analyzing your genetic data...</p>
                                         </div>

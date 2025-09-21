@@ -31,10 +31,13 @@ class ApiService {
     uploadGenome = async (file, disease, maxRecords = 10000) => {
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('disease', disease);
-        formData.append('max_records', maxRecords.toString());
+        
+        const queryParams = new URLSearchParams({
+            disease: disease,
+            max_records: maxRecords.toString()
+        });
 
-        return this.request('/upload-genome', {
+        return this.request(`/upload-genome?${queryParams}`, {
             method: 'POST',
             body: formData
         });

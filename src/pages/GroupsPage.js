@@ -1,200 +1,242 @@
+// Simple Groups solution - just update your existing GroupsPage.js
 import { useState, useEffect, useContext } from 'react';
 import { Container, Row, Col, Table, Modal, Alert, Card } from 'react-bootstrap';
 import { motion } from 'framer-motion';
 import { AuthContext } from '../context/AuthContext';
-import { api } from '../services/api';
+import { useAnalysis } from '../context/AnalysisContext';
 
 export const GroupsPage = () => {
     const { user } = useContext(AuthContext);
+    const { currentAnalysis } = useAnalysis();
     const [groups, setGroups] = useState([]);
     const [selectedGroup, setSelectedGroup] = useState(null);
+    const [sharedAnalyses, setSharedAnalyses] = useState({});
+    
+    // Modal states
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showInviteModal, setShowInviteModal] = useState(false);
-    const [showEditModal, setShowEditModal] = useState(false);
+    const [showShareModal, setShowShareModal] = useState(false);
+    const [showViewModal, setShowViewModal] = useState(false);
+    const [selectedAnalysis, setSelectedAnalysis] = useState(null);
+    
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
     // Form states
     const [newGroupName, setNewGroupName] = useState('');
-    const [editGroupName, setEditGroupName] = useState('');
-    const [inviteEmail, setInviteEmail] = useState('');
-    const [actionLoading, setActionLoading] = useState(false);
+    const [inviteCode, setInviteCode] = useState('');
+    const [joinCode, setJoinCode] = useState('');
 
+    // Load groups from localStorage on mount
     useEffect(() => {
-        loadGroups();
+        loadGroupsFromStorage();
+        loadSharedAnalyses();
+        setLoading(false);
     }, [user]);
 
-    const loadGroups = async () => {
-        try {
-            // Mock data for demo - replace with real API call
-            const mockGroups = [
-                {
-                    id: 1,
-                    name: 'Immediate Family',
-                    members: [
-                        { email: 'john@example.com', name: 'John Doe', hasData: true },
-                        { email: 'jane@example.com', name: 'Jane Doe', hasData: false }
-                    ],
-                    createdBy: user.id
-                },
-                {
-                    id: 2,
-                    name: 'Extended Family',
-                    members: [
-                        { email: 'cousin@example.com', name: 'Cousin Mike', hasData: true }
-                    ],
-                    createdBy: user.id
+    const loadGroupsFromStorage = () => {
+        if (!user?.id) return;
+        
+        const userGroups = localStorage.getItem(`groups_${user.id}`);
+        if (userGroups) {
+            try {
+                const parsed = JSON.parse(userGroups);
+                setGroups(parsed);
+                if (parsed.length > 0) {
+                    setSelectedGroup(parsed[0]);
                 }
-            ];
-            
-            setGroups(mockGroups);
-            if (mockGroups.length > 0) {
-                setSelectedGroup(mockGroups[0]);
+            } catch (error) {
+                console.error('Failed to parse groups:', error);
             }
-        } catch (error) {
-            console.error('Failed to load groups:', error);
-            setError('Failed to load groups');
-        } finally {
-            setLoading(false);
         }
     };
 
-    const createGroup = async (e) => {
+    const loadSharedAnalyses = () => {
+        const shared = localStorage.getItem('sharedAnalyses');
+        if (shared) {
+            try {
+                setSharedAnalyses(JSON.parse(shared));
+            } catch (error) {
+                console.error('Failed to parse shared analyses:', error);
+            }
+        }
+    };
+
+    const saveGroupsToStorage = (updatedGroups) => {
+        if (!user?.id) return;
+        localStorage.setItem(`groups_${user.id}`, JSON.stringify(updatedGroups));
+        setGroups(updatedGroups);
+    };
+
+    const createGroup = (e) => {
         e.preventDefault();
         if (!newGroupName.trim()) {
             setError('Group name is required');
             return;
         }
 
-        setActionLoading(true);
-        setError('');
+        const newGroup = {
+            id: `group_${Date.now()}`,
+            name: newGroupName,
+            creator: user.id,
+            creatorName: user.name,
+            creatorEmail: user.email,
+            members: [{
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                hasAnalysis: !!currentAnalysis,
+                joinedAt: new Date().toISOString()
+            }],
+            inviteCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+            createdAt: new Date().toISOString()
+        };
 
-        try {
-            // Mock API call - replace with real one
-            const newGroup = {
-                id: Date.now(),
-                name: newGroupName,
-                members: [],
-                createdBy: user.id
-            };
-
-            setGroups([...groups, newGroup]);
-            setSelectedGroup(newGroup);
-            setNewGroupName('');
-            setShowCreateModal(false);
-            setSuccess(`Group "${newGroupName}" created successfully!`);
-        } catch (error) {
-            setError('Failed to create group');
-        } finally {
-            setActionLoading(false);
-        }
+        const updatedGroups = [...groups, newGroup];
+        saveGroupsToStorage(updatedGroups);
+        setSelectedGroup(newGroup);
+        setNewGroupName('');
+        setShowCreateModal(false);
+        setSuccess(`Group "${newGroupName}" created! Share code: ${newGroup.inviteCode}`);
     };
 
-    const editGroup = async (e) => {
+    const joinGroup = (e) => {
         e.preventDefault();
-        if (!editGroupName.trim()) {
-            setError('Group name is required');
+        if (!joinCode.trim()) {
+            setError('Join code is required');
             return;
         }
 
-        setActionLoading(true);
-        setError('');
-
-        try {
-            const updatedGroups = groups.map(group => 
-                group.id === selectedGroup.id 
-                    ? { ...group, name: editGroupName }
-                    : group
-            );
-            
-            setGroups(updatedGroups);
-            setSelectedGroup({ ...selectedGroup, name: editGroupName });
-            setEditGroupName('');
-            setShowEditModal(false);
-            setSuccess('Group name updated successfully!');
-        } catch (error) {
-            setError('Failed to update group name');
-        } finally {
-            setActionLoading(false);
+        // Search all users' groups for this invite code
+        const foundGroup = findGroupByInviteCode(joinCode.toUpperCase());
+        
+        if (!foundGroup) {
+            setError('Invalid join code');
+            return;
         }
+
+        // Check if already a member
+        if (foundGroup.members.some(m => m.id === user.id)) {
+            setError('You are already a member of this group');
+            return;
+        }
+
+        // Add user to the group
+        const newMember = {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            hasAnalysis: !!currentAnalysis,
+            joinedAt: new Date().toISOString()
+        };
+
+        foundGroup.members.push(newMember);
+        
+        // Save to creator's storage
+        updateGroupInCreatorStorage(foundGroup);
+        
+        // Add to current user's groups
+        const updatedGroups = [...groups, foundGroup];
+        saveGroupsToStorage(updatedGroups);
+        
+        setSelectedGroup(foundGroup);
+        setJoinCode('');
+        setSuccess(`Joined group "${foundGroup.name}"!`);
     };
 
-    const inviteMember = async (e) => {
-        e.preventDefault();
-        if (!inviteEmail.trim()) {
-            setError('Email is required');
-            return;
-        }
-
-        // Check if email already exists in group
-        if (selectedGroup.members.some(member => member.email === inviteEmail)) {
-            setError('This person is already in the group');
-            return;
-        }
-
-        setActionLoading(true);
-        setError('');
-
-        try {
-            const newMember = {
-                email: inviteEmail,
-                name: inviteEmail.split('@')[0], // Mock name from email
-                hasData: false
-            };
-
-            const updatedGroups = groups.map(group => 
-                group.id === selectedGroup.id 
-                    ? { ...group, members: [...group.members, newMember] }
-                    : group
-            );
-            
-            setGroups(updatedGroups);
-            setSelectedGroup({ 
-                ...selectedGroup, 
-                members: [...selectedGroup.members, newMember] 
-            });
-            
-            setInviteEmail('');
-            setShowInviteModal(false);
-            setSuccess(`Invitation sent to ${inviteEmail}!`);
-        } catch (error) {
-            setError('Failed to send invitation');
-        } finally {
-            setActionLoading(false);
-        }
-    };
-
-    const deleteGroup = async (groupId) => {
-        if (window.confirm('Are you sure you want to delete this group?')) {
-            const updatedGroups = groups.filter(group => group.id !== groupId);
-            setGroups(updatedGroups);
-            
-            if (selectedGroup && selectedGroup.id === groupId) {
-                setSelectedGroup(updatedGroups.length > 0 ? updatedGroups[0] : null);
+    const findGroupByInviteCode = (code) => {
+        // In a real app, you'd query a database
+        // For hackathon, we'll simulate by checking a global storage
+        const allGroups = localStorage.getItem('allGroupsByCode');
+        if (allGroups) {
+            try {
+                const groupsMap = JSON.parse(allGroups);
+                return groupsMap[code];
+            } catch (error) {
+                console.error('Error finding group:', error);
             }
-            
-            setSuccess('Group deleted successfully');
+        }
+        return null;
+    };
+
+    const updateGroupInCreatorStorage = (group) => {
+        // Update the global groups registry
+        const allGroups = JSON.parse(localStorage.getItem('allGroupsByCode') || '{}');
+        allGroups[group.inviteCode] = group;
+        localStorage.setItem('allGroupsByCode', JSON.stringify(allGroups));
+        
+        // Also update creator's personal groups
+        const creatorGroups = JSON.parse(localStorage.getItem(`groups_${group.creator}`) || '[]');
+        const index = creatorGroups.findIndex(g => g.id === group.id);
+        if (index !== -1) {
+            creatorGroups[index] = group;
+            localStorage.setItem(`groups_${group.creator}`, JSON.stringify(creatorGroups));
         }
     };
 
-    const removeMember = async (memberEmail) => {
-        if (window.confirm('Remove this member from the group?')) {
-            const updatedMembers = selectedGroup.members.filter(
-                member => member.email !== memberEmail
-            );
-            
-            const updatedGroups = groups.map(group => 
-                group.id === selectedGroup.id 
-                    ? { ...group, members: updatedMembers }
-                    : group
-            );
-            
-            setGroups(updatedGroups);
-            setSelectedGroup({ ...selectedGroup, members: updatedMembers });
-            setSuccess('Member removed from group');
+    const shareAnalysis = () => {
+        if (!currentAnalysis) {
+            setError('No analysis to share');
+            return;
+        }
+
+        const shareKey = `${selectedGroup.id}_${user.id}`;
+        const updatedShared = {
+            ...sharedAnalyses,
+            [shareKey]: {
+                ...currentAnalysis,
+                sharedBy: user.name,
+                sharedByEmail: user.email,
+                sharedAt: new Date().toISOString(),
+                groupId: selectedGroup.id
+            }
+        };
+
+        localStorage.setItem('sharedAnalyses', JSON.stringify(updatedShared));
+        setSharedAnalyses(updatedShared);
+        setShowShareModal(false);
+        setSuccess('Analysis shared with group!');
+    };
+
+    const viewSharedAnalysis = (memberId) => {
+        const shareKey = `${selectedGroup.id}_${memberId}`;
+        const analysis = sharedAnalyses[shareKey];
+        if (analysis) {
+            setSelectedAnalysis(analysis);
+            setShowViewModal(true);
+        } else {
+            setError('No shared analysis found for this member');
         }
     };
+
+    const leaveGroup = (groupId) => {
+        if (window.confirm('Are you sure you want to leave this group?')) {
+            const updatedGroups = groups.filter(g => g.id !== groupId);
+            saveGroupsToStorage(updatedGroups);
+            
+            // Remove shared analysis
+            const shareKey = `${groupId}_${user.id}`;
+            const updatedShared = { ...sharedAnalyses };
+            delete updatedShared[shareKey];
+            localStorage.setItem('sharedAnalyses', JSON.stringify(updatedShared));
+            setSharedAnalyses(updatedShared);
+            
+            setSelectedGroup(updatedGroups.length > 0 ? updatedGroups[0] : null);
+            setSuccess('Left group successfully');
+        }
+    };
+
+    // Save group to global registry when created
+    useEffect(() => {
+        groups.forEach(group => {
+            if (group.creator === user?.id) {
+                const allGroups = JSON.parse(localStorage.getItem('allGroupsByCode') || '{}');
+                allGroups[group.inviteCode] = group;
+                localStorage.setItem('allGroupsByCode', JSON.stringify(allGroups));
+            }
+        });
+    }, [groups, user]);
 
     if (loading) {
         return (
@@ -224,27 +266,42 @@ export const GroupsPage = () => {
                                 My Groups
                             </h1>
                             <p style={{ color: 'var(--color-light-gray)', marginBottom: '32px' }}>
-                                Create groups and invite people to share genetic insights and compatibility analysis.
+                                Create or join groups to share genetic analysis results. Perfect for families and research groups.
                             </p>
                             
-                            <button 
-                                className="btn-primary-large" 
-                                onClick={() => setShowCreateModal(true)}
-                                style={{ marginBottom: '32px' }}
-                            >
-                                Create New Group
-                            </button>
+                            <div style={{ display: 'flex', gap: '16px', marginBottom: '32px', flexWrap: 'wrap' }}>
+                                <button 
+                                    className="btn-primary-large" 
+                                    onClick={() => setShowCreateModal(true)}
+                                >
+                                    Create Group
+                                </button>
+                                <button 
+                                    className="btn-secondary-large" 
+                                    onClick={() => setShowInviteModal(true)}
+                                >
+                                    Join Group
+                                </button>
+                                {selectedGroup && currentAnalysis && (
+                                    <button 
+                                        className="btn-secondary-large" 
+                                        onClick={() => setShowShareModal(true)}
+                                    >
+                                        Share My Analysis
+                                    </button>
+                                )}
+                            </div>
                         </Col>
                     </Row>
 
                     {error && (
-                        <Alert variant="danger" className="mb-4">
+                        <Alert variant="danger" className="mb-4" onClose={() => setError('')} dismissible>
                             {error}
                         </Alert>
                     )}
 
                     {success && (
-                        <Alert variant="success" className="mb-4">
+                        <Alert variant="success" className="mb-4" onClose={() => setSuccess('')} dismissible>
                             {success}
                         </Alert>
                     )}
@@ -272,26 +329,9 @@ export const GroupsPage = () => {
                                                 {group.name}
                                             </h6>
                                             <small style={{ color: 'var(--color-light-gray)' }}>
-                                                {group.members.length} members
+                                                {group.members.length} members • Code: {group.inviteCode}
                                             </small>
-                                            <div style={{ marginTop: '8px', display: 'flex', gap: '8px' }}>
-                                                <button
-                                                    style={{
-                                                        background: 'transparent',
-                                                        border: '1px solid rgba(255,255,255,0.3)',
-                                                        color: '#fff',
-                                                        padding: '4px 8px',
-                                                        borderRadius: '4px',
-                                                        fontSize: '12px'
-                                                    }}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setEditGroupName(group.name);
-                                                        setShowEditModal(true);
-                                                    }}
-                                                >
-                                                    Rename
-                                                </button>
+                                            <div style={{ marginTop: '8px' }}>
                                                 <button
                                                     style={{
                                                         background: 'transparent',
@@ -303,10 +343,10 @@ export const GroupsPage = () => {
                                                     }}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        deleteGroup(group.id);
+                                                        leaveGroup(group.id);
                                                     }}
                                                 >
-                                                    Delete
+                                                    Leave
                                                 </button>
                                             </div>
                                         </Card.Body>
@@ -314,7 +354,7 @@ export const GroupsPage = () => {
                                 ))
                             ) : (
                                 <p style={{ color: 'var(--color-light-gray)' }}>
-                                    No groups yet. Create your first group to get started!
+                                    No groups yet. Create or join a group to start sharing!
                                 </p>
                             )}
                         </Col>
@@ -323,71 +363,67 @@ export const GroupsPage = () => {
                         <Col md={8}>
                             {selectedGroup ? (
                                 <div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                                        <h4 style={{ color: '#fff', margin: '0' }}>
+                                    <div style={{ marginBottom: '24px' }}>
+                                        <h4 style={{ color: '#fff', margin: '0 0 8px 0' }}>
                                             {selectedGroup.name}
                                         </h4>
-                                        <button 
-                                            className="btn-secondary-large"
-                                            onClick={() => setShowInviteModal(true)}
-                                        >
-                                            Invite Member
-                                        </button>
+                                        <p style={{ color: 'var(--color-light-gray)', margin: '0' }}>
+                                            Invite Code: <strong>{selectedGroup.inviteCode}</strong> | 
+                                            Created by {selectedGroup.creatorName}
+                                        </p>
                                     </div>
 
                                     <div className="results-table">
                                         <h5 style={{ color: 'var(--color-dark-blue)', padding: '20px', margin: '0' }}>
-                                            Group Members
+                                            Group Members ({selectedGroup.members.length})
                                         </h5>
-                                        {selectedGroup.members.length > 0 ? (
-                                            <Table responsive style={{ margin: '0' }}>
-                                                <thead>
-                                                    <tr>
-                                                        <th>Name</th>
-                                                        <th>Email</th>
-                                                        <th>Data Status</th>
-                                                        <th>Actions</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {selectedGroup.members.map((member, index) => (
+                                        <Table responsive style={{ margin: '0' }}>
+                                            <thead>
+                                                <tr>
+                                                    <th>Name</th>
+                                                    <th>Email</th>
+                                                    <th>Joined</th>
+                                                    <th>Analysis Shared</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {selectedGroup.members.map((member, index) => {
+                                                    const shareKey = `${selectedGroup.id}_${member.id}`;
+                                                    const hasSharedAnalysis = !!sharedAnalyses[shareKey];
+                                                    
+                                                    return (
                                                         <tr key={index}>
                                                             <td style={{ fontWeight: '600' }}>{member.name}</td>
                                                             <td>{member.email}</td>
+                                                            <td>{new Date(member.joinedAt).toLocaleDateString()}</td>
                                                             <td>
-                                                                <span className={member.hasData ? 'risk-low' : 'risk-medium'}>
-                                                                    {member.hasData ? 'Has Data' : 'No Data Yet'}
+                                                                <span className={hasSharedAnalysis ? 'risk-low' : 'risk-medium'}>
+                                                                    {hasSharedAnalysis ? 'Yes' : 'No'}
                                                                 </span>
                                                             </td>
                                                             <td>
-                                                                <button 
-                                                                    style={{
-                                                                        background: 'transparent',
-                                                                        border: '1px solid #dc3545',
-                                                                        color: '#dc3545',
-                                                                        padding: '4px 8px',
-                                                                        borderRadius: '4px',
-                                                                        fontSize: '12px'
-                                                                    }}
-                                                                    onClick={() => removeMember(member.email)}
-                                                                >
-                                                                    Remove
-                                                                </button>
+                                                                {hasSharedAnalysis && member.id !== user.id && (
+                                                                    <button 
+                                                                        style={{
+                                                                            background: 'transparent',
+                                                                            border: '1px solid var(--color-sage)',
+                                                                            color: 'var(--color-sage)',
+                                                                            padding: '4px 8px',
+                                                                            borderRadius: '4px',
+                                                                            fontSize: '12px'
+                                                                        }}
+                                                                        onClick={() => viewSharedAnalysis(member.id)}
+                                                                    >
+                                                                        View Analysis
+                                                                    </button>
+                                                                )}
                                                             </td>
                                                         </tr>
-                                                    ))}
-                                                </tbody>
-                                            </Table>
-                                        ) : (
-                                            <div style={{ padding: '40px', textAlign: 'center' }}>
-                                                <h6 style={{ color: 'var(--color-dark-blue)', marginBottom: '16px' }}>
-                                                    No members yet
-                                                </h6>
-                                                <p style={{ color: 'var(--color-medium-gray)' }}>
-                                                    Invite people to join this group and share genetic insights.
-                                                </p>
-                                            </div>
-                                        )}
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </Table>
                                     </div>
                                 </div>
                             ) : (
@@ -416,7 +452,7 @@ export const GroupsPage = () => {
                                 className="form-input"
                                 value={newGroupName}
                                 onChange={(e) => setNewGroupName(e.target.value)}
-                                placeholder="e.g., Family, Work Friends, Study Group"
+                                placeholder="e.g., Smith Family, Research Group"
                                 required
                             />
                         </div>
@@ -424,58 +460,29 @@ export const GroupsPage = () => {
                             <button type="button" className="btn-secondary-large" onClick={() => setShowCreateModal(false)}>
                                 Cancel
                             </button>
-                            <button type="submit" className="btn-primary-large" disabled={actionLoading}>
-                                {actionLoading ? 'Creating...' : 'Create Group'}
+                            <button type="submit" className="btn-primary-large">
+                                Create Group
                             </button>
                         </div>
                     </form>
                 </Modal.Body>
             </Modal>
 
-            {/* Edit Group Modal */}
-            <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered>
+            {/* Join Group Modal */}
+            <Modal show={showInviteModal} onHide={() => setShowInviteModal(false)} centered>
                 <Modal.Header closeButton style={{ background: 'var(--color-dark-blue)' }}>
-                    <Modal.Title style={{ color: '#fff' }}>Rename Group</Modal.Title>
+                    <Modal.Title style={{ color: '#fff' }}>Join Group</Modal.Title>
                 </Modal.Header>
                 <Modal.Body style={{ background: 'var(--color-blue-gray)' }}>
-                    <form onSubmit={editGroup}>
+                    <form onSubmit={joinGroup}>
                         <div className="form-group">
-                            <label className="form-label">Group Name</label>
+                            <label className="form-label">Group Join Code</label>
                             <input
                                 type="text"
                                 className="form-input"
-                                value={editGroupName}
-                                onChange={(e) => setEditGroupName(e.target.value)}
-                                required
-                            />
-                        </div>
-                        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
-                            <button type="button" className="btn-secondary-large" onClick={() => setShowEditModal(false)}>
-                                Cancel
-                            </button>
-                            <button type="submit" className="btn-primary-large" disabled={actionLoading}>
-                                {actionLoading ? 'Updating...' : 'Update Name'}
-                            </button>
-                        </div>
-                    </form>
-                </Modal.Body>
-            </Modal>
-
-            {/* Invite Member Modal */}
-            <Modal show={showInviteModal} onHide={() => setShowInviteModal(false)} centered>
-                <Modal.Header closeButton style={{ background: 'var(--color-dark-blue)' }}>
-                    <Modal.Title style={{ color: '#fff' }}>Invite to {selectedGroup?.name}</Modal.Title>
-                </Modal.Header>
-                <Modal.Body style={{ background: 'var(--color-blue-gray)' }}>
-                    <form onSubmit={inviteMember}>
-                        <div className="form-group">
-                            <label className="form-label">Email Address</label>
-                            <input
-                                type="email"
-                                className="form-input"
-                                value={inviteEmail}
-                                onChange={(e) => setInviteEmail(e.target.value)}
-                                placeholder="person@email.com"
+                                value={joinCode}
+                                onChange={(e) => setJoinCode(e.target.value)}
+                                placeholder="Enter 6-character code"
                                 required
                             />
                         </div>
@@ -483,11 +490,73 @@ export const GroupsPage = () => {
                             <button type="button" className="btn-secondary-large" onClick={() => setShowInviteModal(false)}>
                                 Cancel
                             </button>
-                            <button type="submit" className="btn-primary-large" disabled={actionLoading}>
-                                {actionLoading ? 'Sending...' : 'Send Invitation'}
+                            <button type="submit" className="btn-primary-large">
+                                Join Group
                             </button>
                         </div>
                     </form>
+                </Modal.Body>
+            </Modal>
+
+            {/* Share Analysis Modal */}
+            <Modal show={showShareModal} onHide={() => setShowShareModal(false)} centered>
+                <Modal.Header closeButton style={{ background: 'var(--color-dark-blue)' }}>
+                    <Modal.Title style={{ color: '#fff' }}>Share Analysis</Modal.Title>
+                </Modal.Header>
+                <Modal.Body style={{ background: 'var(--color-blue-gray)' }}>
+                    <p style={{ color: 'var(--color-light-gray)', marginBottom: '24px' }}>
+                        Share your genetic analysis results with "{selectedGroup?.name}" group members?
+                    </p>
+                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                        <button className="btn-secondary-large" onClick={() => setShowShareModal(false)}>
+                            Cancel
+                        </button>
+                        <button className="btn-primary-large" onClick={shareAnalysis}>
+                            Share Analysis
+                        </button>
+                    </div>
+                </Modal.Body>
+            </Modal>
+
+            {/* View Analysis Modal */}
+            <Modal show={showViewModal} onHide={() => setShowViewModal(false)} size="lg" centered>
+                <Modal.Header closeButton style={{ background: 'var(--color-dark-blue)' }}>
+                    <Modal.Title style={{ color: '#fff' }}>
+                        {selectedAnalysis?.sharedBy}'s Analysis
+                    </Modal.Title>
+                </Modal.Header>
+                <Modal.Body style={{ background: 'var(--color-blue-gray)' }}>
+                    {selectedAnalysis && (
+                        <div>
+                            <p style={{ color: 'var(--color-light-gray)', marginBottom: '24px' }}>
+                                Disease: {selectedAnalysis.disease.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} | 
+                                Shared: {new Date(selectedAnalysis.sharedAt).toLocaleDateString()}
+                            </p>
+                            
+                            <Table responsive>
+                                <thead>
+                                    <tr>
+                                        <th>Gene</th>
+                                        <th>Risk Level</th>
+                                        <th>Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {selectedAnalysis.risks.slice(0, 10).map((risk, index) => (
+                                        <tr key={index}>
+                                            <td>{risk.gene}</td>
+                                            <td>
+                                                <span className={`risk-${risk.level?.toLowerCase()}`}>
+                                                    {risk.level}
+                                                </span>
+                                            </td>
+                                            <td>{risk.risk?.toFixed(3)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </Table>
+                        </div>
+                    )}
                 </Modal.Body>
             </Modal>
         </section>

@@ -2,12 +2,14 @@ import { Navbar, Container, Nav, Offcanvas } from "react-bootstrap";
 import { useState, useContext } from "react";
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { useAnalysis } from '../context/AnalysisContext';
 import logo from '../assets/img/logo.png';
 
 export const NavBar = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { user, logout } = useContext(AuthContext);
+    const { hasResults, getSummaryData } = useAnalysis();
     const [showMenu, setShowMenu] = useState(false);
 
     const getActiveLink = (path) => {
@@ -22,7 +24,6 @@ export const NavBar = () => {
     // Handle hash navigation
     const handleHashClick = (hash) => {
         if (location.pathname !== '/') {
-            // If not on home page, navigate to home first, then scroll
             navigate('/');
             setTimeout(() => {
                 const element = document.querySelector(hash);
@@ -31,7 +32,6 @@ export const NavBar = () => {
                 }
             }, 100);
         } else {
-            // If already on home page, just scroll
             const element = document.querySelector(hash);
             if (element) {
                 element.scrollIntoView({ behavior: 'smooth' });
@@ -49,6 +49,8 @@ export const NavBar = () => {
         }
     };
 
+    const summaryData = getSummaryData();
+
     return (
         <Navbar expand="lg" className="fixed-top">
             <Container>
@@ -65,7 +67,6 @@ export const NavBar = () => {
                         Home
                     </Nav.Link>
                     
-                    {/* Updated hash links */}
                     <Nav.Link 
                         className="navbar-link" 
                         onClick={() => handleHashClick('#about')}
@@ -88,13 +89,33 @@ export const NavBar = () => {
                         Pricing
                     </Nav.Link>
                     
-                    {/* Only show feature links when logged in */}
                     {user && (
                         <>
                             <Nav.Link as={Link} to="/analysis" className={getActiveLink('/analysis')}>
-                                Summary
+                                Analysis
                             </Nav.Link>
-                            <Nav.Link as={Link} to="/results" className={getActiveLink('/results')}>
+                            <Nav.Link 
+                                as={Link} 
+                                to="/summary" 
+                                className={getActiveLink('/summary')}
+                                style={{ 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    gap: '6px' 
+                                }}
+                            >
+                                Summary
+                            </Nav.Link>                            
+                            <Nav.Link 
+                                as={Link} 
+                                to="/results" 
+                                className={getActiveLink('/results')}
+                                style={{ 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    gap: '6px' 
+                                }}
+                            >
                                 Results
                             </Nav.Link>
                             <Nav.Link as={Link} to="/groups" className={getActiveLink('/groups')}>
@@ -139,7 +160,6 @@ export const NavBar = () => {
                                 Home
                             </Nav.Link>
                             
-                            {/* Updated mobile hash links */}
                             <Nav.Link 
                                 className="navbar-link" 
                                 onClick={() => handleHashClick('#about')}
@@ -162,10 +182,12 @@ export const NavBar = () => {
                                 Pricing
                             </Nav.Link>
                             
-                            {/* Only show feature links when logged in */}
                             {user && (
                                 <>
                                     <Nav.Link as={Link} to="/analysis" className={getActiveLink('/analysis')} onClick={() => setShowMenu(false)}>
+                                        Analysis
+                                    </Nav.Link>
+                                    <Nav.Link as={Link} to="/summary" className={getActiveLink('/summary')} onClick={() => setShowMenu(false)}>
                                         Summary
                                     </Nav.Link>
                                     <Nav.Link as={Link} to="/results" className={getActiveLink('/results')} onClick={() => setShowMenu(false)}>

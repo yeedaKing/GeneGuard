@@ -279,7 +279,7 @@ export const HomePage = () => {
                                 <p className="pricing-subtitle">Perfect for individuals getting started</p>
                                 <ul className="pricing-features">
                                     <li>Complete genetic health analysis</li>
-                                    <li>AI-powered risk assessmentse</li>
+                                    <li>AI-powered risk assessments</li>
                                     <li>Personalized lifestyle recommendations</li>   
                                     <li>Secure data encryption</li>
                                     <li>Downloadable health reports</li>                                 

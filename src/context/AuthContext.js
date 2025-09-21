@@ -10,7 +10,7 @@ import {
     onAuthStateChanged
 } from 'firebase/auth';
 
-// Firebase configuration - add your actual config here
+// Firebase configuration
 const firebaseConfig = {
     apiKey: process.env.REACT_APP_FIREBASE_API_KEY || "your-api-key",
     authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN || "your-project.firebaseapp.com",
@@ -32,10 +32,9 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Listen for Firebase auth state changes
         const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
             if (firebaseUser) {
-                // Create user object from Firebase data
+                // User logged in
                 const userData = {
                     id: firebaseUser.uid,
                     name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
@@ -45,9 +44,9 @@ export const AuthProvider = ({ children }) => {
                 };
                 
                 setUser(userData);
-                // Store in localStorage for persistence
                 localStorage.setItem('userData', JSON.stringify(userData));
             } else {
+                // User logged out
                 setUser(null);
                 localStorage.removeItem('userData');
             }
@@ -55,7 +54,7 @@ export const AuthProvider = ({ children }) => {
         });
 
         return () => unsubscribe();
-    }, []);
+    }, []); // No dependencies - this effect only runs once
 
     const loginWithEmail = async (email, password) => {
         try {
@@ -82,7 +81,6 @@ export const AuthProvider = ({ children }) => {
                 userData.password
             );
 
-            // Update the user profile with additional info
             await userCredential.user.updateProfile({
                 displayName: `${userData.firstName} ${userData.lastName}`
             });
@@ -142,7 +140,7 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // For backward compatibility with your existing code
+    // For backward compatibility
     const login = loginWithEmail;
     const register = registerWithEmail;
 
