@@ -1360,10 +1360,28 @@ nav.navbar .navbar-nav a.nav-link.navbar-link.active {
 
 /* About Section */
 .about-section {
-  padding: 100px 0;
+  padding: 100px 0 0px;
   background: var(--color-blue-gray);
 }
 
+.about-section .mt-5 {
+  margin-top: 80px !important;
+  justify-content: space-between;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.about-section .col-md-4 {
+  flex: 0 1 28%;
+  max-width: 28%;
+  text-align: center;
+}
+
+.about-section .value-prop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 .section-title {
   color: #fff;
   margin-bottom: 40px;
