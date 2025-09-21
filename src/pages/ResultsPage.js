@@ -135,16 +135,13 @@ export const ResultsPage = () => {
                                                         <td>{risk.rank || 'N/A'}</td>
                                                         <td>
                                                         {risk.tips?.length > 0 ? (
-                                                            <>
-                                                                {console.log(`Gene ${risk.gene} has ${risk.tips.length} tips:`, risk.tips)}
-                                                                {risk.tips.map((tip, i) => (
-                                                                    <div 
-                                                                        key={i} 
-                                                                        style={{ marginBottom: '8px' }} 
-                                                                        dangerouslySetInnerHTML={{ __html: `• ${formatText(tip)}` }} 
-                                                                    />
-                                                                ))}
-                                                            </>
+                                                            risk.tips.slice(0, 2).map((tip, i) => (
+                                                            <div 
+                                                                key={i} 
+                                                                style={{ marginBottom: '8px' }} 
+                                                                dangerouslySetInnerHTML={{ __html: `• ${formatText(tip)}` }} 
+                                                            />
+                                                            ))
                                                         ) : (
                                                             <span style={{ fontStyle: 'italic', color: '#666' }}>
                                                             No recommendations available
