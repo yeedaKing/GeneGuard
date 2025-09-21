@@ -24,7 +24,7 @@ DISCLAIMER_TXT = (
 app = FastAPI(title="GeneGuard API", version="0.2.0")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://geneguard-eaikknfdo-chols8195s-projects.vercel.app", "http://localhost:3000"],
+    allow_origins=["https://geneguard-nmljdmvwd-chols8195s-projects.vercel.app/analysis", "http://localhost:3000"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
