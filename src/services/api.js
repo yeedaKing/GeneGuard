@@ -43,6 +43,20 @@ class ApiService {
         });
     }
 
+    analyzeAllDiseases = async(file, maxRecords = 10000) => {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const queryParams = new URLSearchParams({
+            max_records: maxRecords.toString()
+        });
+
+        return this.request(`/auto-rank?${queryParams}`, {
+            method: 'POST', 
+            body: formData
+        });
+    }
+
     exportCSV = async (userId) => {
         const response = await this.request(`/results/${userId}/csv`);
         const blob = await response.blob();

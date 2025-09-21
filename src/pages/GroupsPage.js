@@ -1,6 +1,5 @@
-// Simple Groups solution - just update your existing GroupsPage.js
 import { useState, useEffect, useContext } from 'react';
-import { Container, Row, Col, Table, Modal, Alert, Card } from 'react-bootstrap';
+import { Container, Row, Col, Table, Modal, Alert, Card, Form } from 'react-bootstrap';
 import { motion } from 'framer-motion';
 import { AuthContext } from '../context/AuthContext';
 import { useAnalysis } from '../context/AnalysisContext';
@@ -17,6 +16,7 @@ export const GroupsPage = () => {
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
     const [showViewModal, setShowViewModal] = useState(false);
+    const [showProfileModal, setShowProfileModal] = useState(false);
     const [selectedAnalysis, setSelectedAnalysis] = useState(null);
     
     const [loading, setLoading] = useState(true);
@@ -28,12 +28,90 @@ export const GroupsPage = () => {
     const [inviteCode, setInviteCode] = useState('');
     const [joinCode, setJoinCode] = useState('');
 
+    const [editingProfile, setEditingProfile] = useState({
+        name: '', 
+        phone: ''
+    });
+
     // Load groups from localStorage on mount
     useEffect(() => {
         loadGroupsFromStorage();
         loadSharedAnalyses();
+        loadUserProfile();
         setLoading(false);
     }, [user]);
+
+    const loadUserProfile = () => {
+        if (!user?.id) return;
+
+        const userProfile = localStorage.getItem(`profile_${user.id}`);
+        if (userProfile) {
+            try {
+                const profile = JSON.parse(userProfile);
+                setEditingProfile({
+                    name: profile.name || user.name,
+                    phone: profile.phone || ''
+                });
+            } catch (error) {
+                console.error('Failed to parse user profile:', error);
+                setEditingProfile({
+                    name: user.name,
+                    phone: ''
+                });
+            }
+        } else {
+            setEditingProfile({
+                name: user.name,
+                phone: ''
+            });
+        }
+    };
+
+    const saveUserProfile = () => {
+        if (!user?.id) return;
+
+        const profile = {
+            name: editingProfile.name,
+            phone: editingProfile.phone,
+            email: user.email,
+            updatedAt: new Date().toISOString()
+        };
+
+        localStorage.setItem(`profile_${user.id}`, JSON.stringify(profile));
+
+        const updatedGroups = groups.map(group => ({
+            ...group,
+            members: group.members.map(member =>
+                member.id === user.id
+                    ? { ...member, name: profile.name, phone: profile.phone }
+                    :member
+            )
+        }));
+
+        setGroups(updatedGroups);
+        saveGroupsToStorage(updatedGroups);
+
+        updatedGroups.forEach(group => {
+            if (group.creator === user.id || group.members.some(m => m.id === user.id)) {
+                updateGroupInCreatorStorage(group);
+            }
+        });
+
+        setShowProfileModal(false);
+        setSuccess('Profile updated successfully!');
+    };
+
+    const getUserProfile = (userID) => {
+        const profile = localStorage.getItem(`profile_${userID}`);
+        if (profile) {
+            try {
+                return JSON.parse(profile);
+            } catch (error) {
+                console.error('Failed to parse profile:', error);
+            }
+        }
+        return null;
+    };
 
     const loadGroupsFromStorage = () => {
         if (!user?.id) return;
@@ -76,16 +154,19 @@ export const GroupsPage = () => {
             return;
         }
 
+        const userProfile = getUserProfile(user.id) || { name: user.name, phone: '' };
+
         const newGroup = {
             id: `group_${Date.now()}`,
             name: newGroupName,
             creator: user.id,
-            creatorName: user.name,
+            creatorName: userProfile.name,
             creatorEmail: user.email,
             members: [{
                 id: user.id,
-                name: user.name,
+                name: userProfile.name,
                 email: user.email,
+                phone: userProfile.phone || '',
                 hasAnalysis: !!currentAnalysis,
                 joinedAt: new Date().toISOString()
             }],
@@ -122,21 +203,21 @@ export const GroupsPage = () => {
             return;
         }
 
+        const userProfile = getUserProfile(user.id) || { name: user.name, phone: ''};
+
         // Add user to the group
         const newMember = {
             id: user.id,
-            name: user.name,
+            name: userProfile.name,
             email: user.email,
+            phone: userProfile.phone || '',
             hasAnalysis: !!currentAnalysis,
             joinedAt: new Date().toISOString()
         };
 
         foundGroup.members.push(newMember);
-        
-        // Save to creator's storage
         updateGroupInCreatorStorage(foundGroup);
         
-        // Add to current user's groups
         const updatedGroups = [...groups, foundGroup];
         saveGroupsToStorage(updatedGroups);
         
@@ -146,8 +227,6 @@ export const GroupsPage = () => {
     };
 
     const findGroupByInviteCode = (code) => {
-        // In a real app, you'd query a database
-        // For hackathon, we'll simulate by checking a global storage
         const allGroups = localStorage.getItem('allGroupsByCode');
         if (allGroups) {
             try {
@@ -186,7 +265,7 @@ export const GroupsPage = () => {
             ...sharedAnalyses,
             [shareKey]: {
                 ...currentAnalysis,
-                sharedBy: user.name,
+                sharedBy: editingProfile.name || user.name,
                 sharedByEmail: user.email,
                 sharedAt: new Date().toISOString(),
                 groupId: selectedGroup.id
@@ -197,6 +276,18 @@ export const GroupsPage = () => {
         setSharedAnalyses(updatedShared);
         setShowShareModal(false);
         setSuccess('Analysis shared with group!');
+    };
+
+    const unshareAnalysis = () => {
+        if (!selectedGroup || !user) return;
+
+        const shareKey = `${selectedGroup.id}_${user.id}`;
+        const updatedShared = { ...sharedAnalyses };
+        delete updatedShared[shareKey];
+
+        localStorage.setItem('sharedAnalyses', JSON.stringify(updatedShared));
+        setSharedAnalyses(updatedShared);
+        setSuccess('Analysis unshared from group');
     };
 
     const viewSharedAnalysis = (memberId) => {
@@ -282,13 +373,37 @@ export const GroupsPage = () => {
                                 >
                                     Join Group
                                 </button>
+                                <button
+                                    className="btn-secondary-large"
+                                    onClick={() => {
+                                        loadUserProfile();
+                                        setShowProfileModal(true);
+                                    }}
+                                >
+                                    Edit My Profile
+                                </button>
                                 {selectedGroup && currentAnalysis && (
-                                    <button 
-                                        className="btn-secondary-large" 
-                                        onClick={() => setShowShareModal(true)}
-                                    >
-                                        Share My Analysis
-                                    </button>
+                                    (() => {
+                                        const shareKey = `${selectedGroup.id}_${user.id}`;
+                                        const isShared = !!sharedAnalyses[shareKey];
+
+                                        return isShared ? (
+                                            <button 
+                                                className="btn-secondary-large"
+                                                onClick={unshareAnalysis}
+                                                style={{ background: '#dc3545', borderColor: '#dc3545' }}
+                                            >
+                                                Unshare My Analysis
+                                            </button>
+                                        ) : (
+                                            <button 
+                                                className="btn-secondary-large" 
+                                                onClick={() => setShowShareModal(true)}
+                                            >
+                                                Share My Analysis
+                                            </button>
+                                        );
+                                    }) ()
                                 )}
                             </div>
                         </Col>
@@ -382,6 +497,7 @@ export const GroupsPage = () => {
                                                 <tr>
                                                     <th>Name</th>
                                                     <th>Email</th>
+                                                    <th>Phone</th>
                                                     <th>Joined</th>
                                                     <th>Analysis Shared</th>
                                                     <th>Actions</th>
@@ -394,8 +510,23 @@ export const GroupsPage = () => {
                                                     
                                                     return (
                                                         <tr key={index}>
-                                                            <td style={{ fontWeight: '600' }}>{member.name}</td>
+                                                            <td style={{ fontWeight: '600' }}>
+                                                                {member.name}
+                                                                {member.id === user.id && ( 
+                                                                    <span style={{
+                                                                        fontSize: '12px',
+                                                                        color: 'var(--color-sage)',
+                                                                        marginLeft: '8px',
+                                                                        fontWeight: 'normal'
+                                                                    }}>
+                                                                        (You)
+                                                                    </span>
+                                                                )}
+                                                            </td>
                                                             <td>{member.email}</td>
+                                                            <td style={{ fontSize: '14px' }}>
+                                                                {member.phone || 'Not provided'}
+                                                            </td>
                                                             <td>{new Date(member.joinedAt).toLocaleDateString()}</td>
                                                             <td>
                                                                 <span className={hasSharedAnalysis ? 'risk-low' : 'risk-medium'}>
@@ -437,7 +568,75 @@ export const GroupsPage = () => {
                     </Row>
                 </motion.div>
             </Container>
-
+            {/* Profile Edit Modal */}
+            <Modal show={showProfileModal} onHide={() => setShowProfileModal(false)} centered>
+                <Modal.Header closeButton style={{ background: 'var(--color-dark-blue)' }}>
+                    <Modal.Title style={{ color: '#fff' }}>Edit Profile</Modal.Title>
+                </Modal.Header>
+                <Modal.Body style={{ background: 'var(--color-blue-gray)' }}>
+                    <Form>
+                        <div className="form-group">
+                            <label className="form-label">Display Name</label>
+                            <input
+                                type="text"
+                                className="form-input"
+                                value={editingProfile.name}
+                                onChange={(e) => setEditingProfile(prev => ({ ...prev, name: e.target.value }))}
+                                placeholder="Your display name"
+                                required
+                            />
+                            <small style={{ color: 'var(--color-light-gray)', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                                This name will be visible to other group members
+                            </small>
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Phone Number (Optional)</label>
+                            <input
+                                type="tel"
+                                className="form-input"
+                                value={editingProfile.phone}
+                                onChange={(e) => setEditingProfile(prev => ({ ...prev, phone: e.target.value }))}
+                                placeholder="e.g., +1 (555) 123-4567"
+                            />
+                            <small style={{ color: 'var(--color-light-gray)', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                                Phone number will be visible to group members for contact
+                            </small>
+                        </div>
+                        <div style={{ 
+                            background: 'rgba(125, 178, 144, 0.1)', 
+                            border: '1px solid rgba(125, 178, 144, 0.2)',
+                            borderRadius: '8px',
+                            padding: '12px',
+                            marginBottom: '20px'
+                        }}>
+                            <p style={{ 
+                                color: 'var(--color-light-gray)', 
+                                fontSize: '14px', 
+                                margin: '0',
+                                lineHeight: '1.4'
+                            }}>
+                                <strong>Privacy Note:</strong> Your profile information is only shared with members 
+                                of groups you join. You can update this anytime.
+                            </p>
+                        </div>
+                    </Form>
+                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                        <button 
+                            className="btn-secondary-large" 
+                            onClick={() => setShowProfileModal(false)}
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            className="btn-primary-large" 
+                            onClick={saveUserProfile}
+                            disabled={!editingProfile.name.trim()}
+                        >
+                            Save Profile
+                        </button>
+                    </div>
+                </Modal.Body>
+            </Modal>
             {/* Create Group Modal */}
             <Modal show={showCreateModal} onHide={() => setShowCreateModal(false)} centered>
                 <Modal.Header closeButton style={{ background: 'var(--color-dark-blue)' }}>
