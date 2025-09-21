@@ -1231,6 +1231,7 @@ nav.navbar .navbar-nav a.nav-link.navbar-link.active {
 .pricing-card.featured {
   background: var(--color-teal);
   border: 2px solid #fff;
+  opacity: 0.5;
 }
 
 .pricing-badge {

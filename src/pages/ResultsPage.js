@@ -135,7 +135,7 @@ export const ResultsPage = () => {
                                                         <td>{risk.rank || 'N/A'}</td>
                                                         <td>
                                                         {risk.tips?.length > 0 ? (
-                                                            risk.tips.slice(0, 2).map((tip, i) => (
+                                                            risk.tips.map((tip, i) => (
                                                             <div 
                                                                 key={i} 
                                                                 style={{ marginBottom: '8px' }} 

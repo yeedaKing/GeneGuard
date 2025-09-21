@@ -23,8 +23,8 @@ export const HomePage = () => {
         },
         {
             imgUrl: familyImg,
-            title: "Family Dashboard",
-            description: "Connect with family members to see shared genetic risks and plan together."
+            title: "Relationship Dashboard",
+            description: "Connect with family members and friends to see shared genetic risks and plan together."
         },
         {
             imgUrl: tipsImg,
