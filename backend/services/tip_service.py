@@ -36,5 +36,5 @@ def get_tips(gene: str, disease: str) -> list[str]:
 
     # simple post-shuffle to mix order
     lines = [s.strip("• ").strip() for s in text.split("\n") if s.strip()]
-    random.shuffle(lines)
+    # random.shuffle(lines)
     return lines[:2]  # guarantee exactly two
