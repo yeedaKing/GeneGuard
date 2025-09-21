@@ -32,6 +32,7 @@ def parse_genome_file(raw_bytes: bytes, max_rsids: int = 500) -> set[str]:
     rsids = df["rsid"].head(max_rsids).tolist()
     genes = set()
 
+    """ SLOW - SWITCH TO CHUNKS LATER IF POSSIBLE FOR SCALABILITY """
     for rsid in rsids[:max_rsids]:
         resp = requests.get(
             MYVARIANT_URL,

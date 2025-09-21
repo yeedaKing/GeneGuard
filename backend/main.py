@@ -66,7 +66,7 @@ async def upload_genome(
             tmp.flush()
             variants = stream_variants(tmp.name, max_records=max_records)
             ann      = annotate_variants(variants)
-            burden   = burden_scores(ann, severe_only=True)
+            burden   = burden_scores(ann, severe_only=False)
             genes    = set(burden.keys())
 
     # disease-risk mapping

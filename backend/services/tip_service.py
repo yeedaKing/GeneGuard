@@ -23,7 +23,7 @@ def get_tips(gene: str, disease: str) -> list[str]:
         "model": MODEL,
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.5,
-        "max_tokens": 120,
+        "max_tokens": 10000,
     }
     resp = httpx.post(ENDPOINT, json=body, headers=headers, timeout=20)
     resp.raise_for_status()
