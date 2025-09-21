@@ -82,11 +82,13 @@ export const HomePage = () => {
                     <Row className="align-items-center min-vh-100">
                         <Col lg={8}>
                             <div>
-                                <h1>Understand Your Family's Genetic Health</h1>
-                                <p className="subtitle">AI-powered genomic analysis for better family planning</p>
+                                <h1>Protect Your Family's Health Future</h1>
+                                <p className="subtitle">Genetic health insights to help you make informed decisions for your family</p>
                                 <p>
-                                    Upload your genetic data and get personalized insights about health risks, 
-                                    compatibility with your partner, and actionable recommendations for your family's wellbeing.
+                                    Take charge of your family's wellbeing by understanding inherited health 
+                                    risks. Upload genetic data to discover potential conditions, get preventive care 
+                                    recommendations, and make informed decisions about your family's health future 
+                                    together.
                                 </p>
                                 <div className="cta-buttons">
                                     <Link to="/auth" className="btn-primary-large">
@@ -122,9 +124,10 @@ export const HomePage = () => {
                                 About GeneGuard
                             </motion.h2>
                             <motion.p className="section-description" variants={ fadeInUp }>
-                                GeneGuard helps families understand their genetic health through AI-powered analysis. 
-                                Our mission is to make genetic insights accessible, understandable, and actionable 
-                                for better family health planning and decision-making.
+                                GeneGuard helps families stay ahead of genetic health risks. By understanding 
+                                your family's genetic predispositions early, you can make informed healthcare decisions,
+                                pursue preventive care, and protect the people you love most. Knowledge is the first step to 
+                                keeping your family healthy
                             </motion.p>
                             <Row className="mt-5">
                                 <Col md={4} className="mb-4">
@@ -132,9 +135,9 @@ export const HomePage = () => {
                                         <div className="value-icon">
                                             <img src={shieldImg} alt="SHIELD"/>
                                         </div>
-                                        <h5 className="value-title">Privacy First</h5>
+                                        <h5 className="value-title">Family Protection</h5>
                                         <p className="value-description">
-                                            Your genetic data is encrypted and never shared without your permission
+                                            Early detection of genetic risks helps you protect your loved ones through preventive care
                                         </p>
                                     </motion.div>
                                 </Col>
@@ -143,9 +146,9 @@ export const HomePage = () => {
                                         <div className="value-icon">
                                             <img src={brainImg} alt="BRAIN"/>
                                         </div>
-                                        <h5 className="value-title">AI-Powered</h5>
+                                        <h5 className="value-title">Peace of Mind</h5>
                                         <p className="value-description">
-                                            Advanced algorithms analyze your data against the latest research
+                                            Know what to watch for and when to seek medical attention based on your family's genetics
                                         </p>
                                     </motion.div>
                                 </Col>
@@ -154,9 +157,9 @@ export const HomePage = () => {
                                         <div className="value-icon">
                                             <img src={heartImg} alt="HEART"/>
                                         </div>
-                                        <h5 className="value-title">Family-Focused</h5>
+                                        <h5 className="value-title">Informed Decisions</h5>
                                         <p className="value-description">
-                                            Built specifically for families planning their health together
+                                            Make better healthcare choices for your family with genetic insights and expert recommendations
                                         </p>
                                     </motion.div>
                                 </Col>
@@ -326,9 +329,9 @@ export const HomePage = () => {
                     <Row className="text-center">
                         <Col>
                             <div>
-                                <h2 className="cta-title">Ready to Learn About Your Genes?</h2>
+                                <h2 className="cta-title">Ready to Protect Your Family's Health?</h2>
                                 <p className="cta-description">
-                                    Join families who are taking control of their health with genetic insights.
+                                    Join families who are taking proactive steps to understand and prevent genetic health risks. Start building a healthier future for the people you love most.
                                 </p>
                                 <Link to="/auth" className="btn-primary-large">
                                     Get Started Now
