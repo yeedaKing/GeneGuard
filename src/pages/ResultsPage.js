@@ -126,7 +126,7 @@ export const ResultsPage = () => {
                                                 return (
                                                     <tr key={index}>
                                                         <td style={{ fontWeight: '600' }}>{risk.gene}</td>
-                                                        <td>{risk.risk?.toFixed(3) || 'N/A'}</td>
+                                                        <td>{risk.risk?.toFixed(6) || 'N/A'}</td>
                                                         <td>
                                                             <span className={`risk-${riskFormat.level}`}>
                                                                 {riskFormat.text}
