@@ -77,8 +77,6 @@ $RECYCLE.BIN/
 .nfs*
 uploads/
 data/genomic/
-*.vcf
-*.vcf.gz
 *.23andme
 *.ancestrydna
 user_data/
