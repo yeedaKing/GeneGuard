@@ -772,7 +772,7 @@ nav.navbar .navbar-nav a.nav-link.navbar-link.active {
   font-weight: 600;
   text-align: left;
   border-bottom: 2px solid rgba(255, 255, 255, 0.2);
-  font-size: 16px;
+  font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.6px;
   border-right: 1px solid rgba(255, 255, 255, 0.1);
@@ -789,7 +789,7 @@ nav.navbar .navbar-nav a.nav-link.navbar-link.active {
   color: #1a252f;
   vertical-align: top;
   line-height: 1.8;
-  font-size: 18px;
+  font-size: 24px !important;
   background: var(--text-primary);
 }
 

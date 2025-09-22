@@ -91,6 +91,11 @@ export const GroupsPage = () => {
         setGroups(updatedGroups);
         saveGroupsToStorage(updatedGroups);
 
+        if (selectedGroup) {
+            const updatedSelectedGroup = updatedGroups.find(g => g.id === selectedGroup.id);
+            setSelectedGroup(updatedSelectedGroup);
+        }
+
         updatedGroups.forEach(group => {
             if (group.creator === user.id || group.members.some(m => m.id === user.id)) {
                 updateGroupInCreatorStorage(group);
@@ -514,7 +519,7 @@ export const GroupsPage = () => {
                                                                 {member.name}
                                                                 {member.id === user.id && ( 
                                                                     <span style={{
-                                                                        fontSize: '12px',
+                                                                        fontSize: '14px',
                                                                         color: 'var(--color-sage)',
                                                                         marginLeft: '8px',
                                                                         fontWeight: 'normal'
@@ -524,7 +529,7 @@ export const GroupsPage = () => {
                                                                 )}
                                                             </td>
                                                             <td>{member.email}</td>
-                                                            <td style={{ fontSize: '14px' }}>
+                                                            <td>
                                                                 {member.phone || 'Not provided'}
                                                             </td>
                                                             <td>{new Date(member.joinedAt).toLocaleDateString()}</td>
