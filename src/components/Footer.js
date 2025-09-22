@@ -33,7 +33,7 @@ export const Footer = () => {
                             fontSize: '12px',
                             margin: '0'
                         }}>
-                            © {currentYear} GeneGuard Team. Made for hackathon.
+                            © {currentYear} 4Sum Team. Made for hackathon.
                         </p>
                     </Col>
                 </Row>
