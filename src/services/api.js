@@ -98,3 +98,15 @@ export const formatRiskLevel = (level) => {
         default: return { level: 'unknown', color: '#6c757d', text: 'Unknown' };
     }
 };
+
+createGroup = async (groupData) => {
+    return this.request('/groups/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(groupData)
+    });
+}
+
+getGroupByCode = async (inviteCode) => {
+    return this.request(`/groups/by-code/${inviteCode}`)
+}

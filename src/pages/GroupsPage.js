@@ -175,7 +175,7 @@ export const GroupsPage = () => {
                 hasAnalysis: !!currentAnalysis,
                 joinedAt: new Date().toISOString()
             }],
-            inviteCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+            inviteCode: Math.random().toString(36).substring(2, 18).toUpperCase(),
             createdAt: new Date().toISOString()
         };
 

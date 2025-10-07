@@ -12,6 +12,30 @@ from services.annotate import annotate_variants
 from services.burden import burden_scores
 from services.risk_annotator import annotate_risks
 
+# new imports for database implementation 
+from fastapi import Depends, Header
+from sqlalchemy import create_engine, text 
+from sqlalchemy.orm import sessionmaker, Session
+from pydantic import BaseModel
+from typing import Optional, List 
+import os 
+from dotenv import load_dotenv
+from datetime import datetime
+
+load_dotenv()
+
+# Database settings
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://localhost/geneguard")
+engine = create_engine(
+    DATABASE_URL, 
+    poolclass=QueuePool, 
+    pool_size=5, 
+    max_overflow=10,
+    pool_pre_ping=True,
+    pool_recycle=3600,
+)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 TMPDIR = Path(tempfile.gettempdir())
 SUPPORTED_DISEASES = ["alzheimers", "CHD", "hypertension", "multiple_sclerosis", "obesity",
                         "parkinsons", "stroke", "T1D", "T2D", "rheumatoid_arthritis"]
@@ -150,3 +174,74 @@ def export_csv(user_id: str):
         "Content-Disposition": f'attachment; filename="{user_id}.csv"'
     }
     return StreamingResponse(buf, media_type="text/csv", headers=headers)
+
+# Database implementation endpoints
+
+# ----------------
+# User endpoints 
+# ----------------
+# POST /users/sync 
+# - create the user in database after login (using Firebase)
+# - call immediately after user logs in 
+# - parameters: firebase_uid, email, display_name, phone 
+# - return: user id and profile info 
+
+# GET /users/{firebase_uid}
+# - get user profile info
+# - call after loading the user's profile 
+# - parameters: firebase_uid in URL
+# - return: user details
+
+# PUT /users/{firebase_uid}/profile
+# - update user's display name and phone number 
+# - call after user clicks 'Save Profile' 
+# - parameters: firebase_uid in URL, display_name and phone 
+# - return: success confirmation
+
+# ----------------
+# Group endpoints 
+# ----------------
+# POST /groups 
+# - create new group 
+# - call when user clicks 'Create Group'
+# - parameters: group name, firebase_uid
+# - return: group ID, invite code, creation date 
+
+# POST /groups/join
+# - join group using invite code
+# - call when user clicks 'Join' using invite code
+# - parameters: invite_code, firebase_uid
+# - return: success message and group name
+
+# GET /groups/{firebase_uid}
+# - get all groups a user belongs to 
+# - call when loading the GroupsPage
+# - parameters: firebase_uid in URL
+# - return: array of user's groups
+
+# DELETE /groups/{group_id}/leave
+# - remove yourself from a group
+# - call when user clicks 'Leave Group'
+# - parameters: group_id in URL, firebase_uid
+# - return: success message 
+
+# ----------------
+# Analysis endpoints 
+# ----------------
+# POST /analyses/share
+# - share your analysis results with a group
+# - call when user clicks 'Share My Analysis'
+# - parameters: analysis_id, group_id, firebase_uid
+# - return: success message 
+
+# DELETE /analyses/{analysis_id}/unshare/{group_id}
+# - stop sharing your results with group
+# - call when user clicks 'Unshare My Analysis'
+# - parameters: analysis_id and group_id in URL, firebase_uid
+# - return: success message 
+
+# GET /groups/{group_id}/analyses
+# - view all analyses shared in a group
+# - call when user clicks 'View Analysis' for another user
+# - parameters: group_id in URL, firebase_uid for auth
+# - return: array of shared analyses

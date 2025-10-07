@@ -41,3 +41,7 @@ python-dateutil==2.9.0.post0
 pytz==2025.2
 tzdata==2025.2
 click==8.3.0
+
+# database 
+sqlalchemy==2.0.23
+psycopg2-binary==2.9.9
