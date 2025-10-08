@@ -177,6 +177,13 @@ def export_csv(user_id: str):
 
 # Database implementation endpoints
 
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 # ----------------
 # User endpoints 
 # ----------------
@@ -185,27 +192,18 @@ def export_csv(user_id: str):
 # - call immediately after user logs in 
 # - parameters: firebase_uid, email, display_name, phone 
 # - return: user id and profile info 
-@app.post("/users/sync")
-def sync_user(firebase_uid: str, email: str, display_name: str, phone: str):
-    return {"user_id": firebase_uid, "email": email, "display_name": display_name, "phone": phone}
 
 # GET /users/{firebase_uid}
 # - get user profile info
 # - call after loading the user's profile 
 # - parameters: firebase_uid in URL
 # - return: user details
-@app.get("/users/{firebase_uid}")
-def get_user_profile(firebase_uid: str):
-    return {"user_id": firebase_uid, "email": "<user_email>", "display_name": "<user_display_name>", "phone": "<user_phone>"}
 
 # PUT /users/{firebase_uid}/profile
 # - update user's display name and phone number 
 # - call after user clicks 'Save Profile' 
 # - parameters: firebase_uid in URL, display_name and phone 
 # - return: success confirmation    
-@app.put("/users/{firebase_uid}/profile")
-def update_user_profile(firebase_uid: str, display_name: str, phone: str):
-    return {"message": "Profile updated successfully"}
 
 # ----------------
 # Group endpoints 
@@ -215,40 +213,24 @@ def update_user_profile(firebase_uid: str, display_name: str, phone: str):
 # - call when user clicks 'Create Group'
 # - parameters: group name, firebase_uid
 # - return: group ID, invite code, creation date 
-@app.post("/groups")
-def create_group(group_name: str, firebase_uid: str):
-    return {
-        "group_id": "generated_group_id",
-        "invite_code": "generated_invite_code",
-        "created_at": datetime.utcnow().isoformat()
-    }
 
 # POST /groups/join
 # - join group using invite code
 # - call when user clicks 'Join' using invite code
 # - parameters: invite_code, firebase_uid
 # - return: success message and group name
-@app.post("/groups/join")
-def join_group(invite_code: str, firebase_uid: str):
-    return {"message": "Group joined successfully", "group_name": "Example Group"}
 
 # GET /groups/{firebase_uid}
 # - get all groups a user belongs to 
 # - call when loading the GroupsPage
 # - parameters: firebase_uid in URL
 # - return: array of user's groups
-@app.get("/groups/{firebase_uid}")
-def get_user_groups(firebase_uid: str):
-    return {"groups": []}
 
 # DELETE /groups/{group_id}/leave
 # - remove yourself from a group
 # - call when user clicks 'Leave Group'
 # - parameters: group_id in URL, firebase_uid
 # - return: success message 
-@app.delete("/groups/{group_id}/leave")
-def leave_group(group_id: str, firebase_uid: str):
-    return {"message": "Left group successfully"}
 
 # ----------------
 # Analysis endpoints 
@@ -258,17 +240,110 @@ def leave_group(group_id: str, firebase_uid: str):
 # - call when user clicks 'Share My Analysis'
 # - parameters: analysis_id, group_id, firebase_uid
 # - return: success message 
-@app.post("/analyses/share")
-def share_analysis(analysis_id: str, group_id: str, firebase_uid: str):
-    return {"message": "Analysis shared successfully"}
+@router.post("/analyses/share")
+async def share_analysis(
+    analysis_id: str,
+    group_id: str,
+    firebase_uid: str,
+    db: Session = Depends(get_db)
+):
+    # get user_id from firebase_uid
+    user_query = text("""
+        SELECT id
+        FROM users
+        WHERE firebase_uid = :uid
+    """)
+    user_row = db.execute(user_query, {"uid": firebase_uid}).fetchone()
+    if not user_row:
+        raise HTTPException(404, "User not found")
+    user_id = user_row[0]
+
+    # check membership in group
+    check_query = text("""
+        SELECT id
+        FROM group_members
+        WHERE group_id = :group_id AND user_id = :user_id
+    """)
+    membership = db.execute(check_query, {
+        "group_id": group_id,
+        "user_id": user_id
+    }).fetchone()
+    if not membership:
+        raise HTTPException(403, "Not a member of this group")
+
+    # insert share record
+    insert_query = text("""
+        INSERT INTO shared_analyses (analysis_id, group_id, shared_by)
+        VALUES (:analysis_id, :group_id, :user_id)
+        RETURNING id, analysis_id, group_id, shared_by, shared_at
+    """)
+    result = db.execute(insert_query, {
+        "analysis_id": analysis_id,
+        "group_id": group_id,
+        "user_id": user_id
+    })
+    db.commit()
+    row = result.fetchone()
+
+    return {
+        "message": "Analysis shared successfully",
+        "share": {
+            "id": str(row[0]),
+            "analysis_id": row[1],
+            "group_id": row[2],
+            "shared_by": row[3],
+            "shared_at": row[4].isoformat()
+        }
+    }
 
 # DELETE /analyses/{analysis_id}/unshare/{group_id}
 # - stop sharing your results with group
 # - call when user clicks 'Unshare My Analysis'
 # - parameters: analysis_id and group_id in URL, firebase_uid
 # - return: success message 
-@app.delete("/analyses/{analysis_id}/unshare/{group_id}")
-def unshare_analysis(analysis_id: str, group_id: str, firebase_uid: str):
+@router.delete("/analyses/{analysis_id}/unshare/{group_id}")
+async def unshare_analysis(
+    analysis_id: str, 
+    group_id: str, 
+    firebase_uid: str,
+    db: Session = Depends(get_db)
+    ):
+    # get user_id from firebase_uid
+    user_query = text("""
+        SELECT id
+        FROM users
+        WHERE firebase_uid = :uid
+    """)
+    user_row = db.execute(user_query, {"uid": firebase_uid}).fetchone()
+    if not user_row:
+        raise HTTPException(404, "User not found")
+    user_id = user_row[0]
+
+    # check membership in group
+    check_query = text("""
+        SELECT id
+        FROM group_members
+        WHERE group_id = :group_id AND user_id = :user_id
+    """)
+    membership = db.execute(check_query, {
+        "group_id": group_id,
+        "user_id": user_id
+    }).fetchone()
+    if not membership:
+        raise HTTPException(403, "Not a member of this group")
+
+    # delete share record
+    delete_query = text("""
+        DELETE FROM shared_analyses
+        WHERE analysis_id = :analysis_id AND group_id = :group_id AND shared_by = :user_id
+    """)
+    db.execute(delete_query, {
+        "analysis_id": analysis_id,
+        "group_id": group_id,
+        "user_id": user_id
+    })
+    db.commit()
+
     return {"message": "Analysis unshared successfully"}
 
 # GET /groups/{group_id}/analyses
@@ -276,6 +351,43 @@ def unshare_analysis(analysis_id: str, group_id: str, firebase_uid: str):
 # - call when user clicks 'View Analysis' for another user
 # - parameters: group_id in URL, firebase_uid for auth
 # - return: array of shared analyses
-@app.get("/groups/{group_id}/analyses")
-def view_group_analyses(group_id: str, firebase_uid: str):
-    return {"analyses": []}
+@router.get("/groups/{group_id}/analyses")
+async def view_shared_analyses(
+    group_id: str,
+    firebase_uid: str,
+    db: Session = Depends(get_db)
+    ):
+
+    # get user_id from firebase_uid
+    user_query = text("""
+        SELECT id
+        FROM users
+        WHERE firebase_uid = :uid
+    """)
+    user_row = db.execute(user_query, {"uid": firebase_uid}).fetchone()
+    if not user_row:
+        raise HTTPException(404, "User not found")
+    user_id = user_row[0]
+
+    # check membership in group
+    check_query = text("""
+        SELECT id
+        FROM group_members
+        WHERE group_id = :group_id AND user_id = :user_id
+    """)
+    membership = db.execute(check_query, {
+        "group_id": group_id,
+        "user_id": user_id
+    }).fetchone()
+    if not membership:
+        raise HTTPException(403, "Not a member of this group")
+
+    # get shared analyses
+    shared_query = text("""
+        SELECT a.id, a.name, a.shared_by, a.shared_at
+        FROM shared_analyses a
+        WHERE a.group_id = :group_id
+    """)
+    shared_analyses = db.execute(shared_query, {"group_id": group_id}).fetchall()
+
+    return {"shared_analyses": [dict(row) for row in shared_analyses]}
