@@ -186,6 +186,7 @@ def export_csv(user_id: str):
 # - parameters: firebase_uid, email, display_name, phone 
 # - return: user id and profile info 
 
+
 # GET /users/{firebase_uid}
 # - get user profile info
 # - call after loading the user's profile 
@@ -233,15 +234,24 @@ def export_csv(user_id: str):
 # - call when user clicks 'Share My Analysis'
 # - parameters: analysis_id, group_id, firebase_uid
 # - return: success message 
+@app.post("/analyses/share")
+def share_analysis(analysis_id: str, group_id: str, firebase_uid: str):
+    return {"message": "Analysis shared successfully"}
 
 # DELETE /analyses/{analysis_id}/unshare/{group_id}
 # - stop sharing your results with group
 # - call when user clicks 'Unshare My Analysis'
 # - parameters: analysis_id and group_id in URL, firebase_uid
 # - return: success message 
+@app.delete("/analyses/{analysis_id}/unshare/{group_id}")
+def unshare_analysis(analysis_id: str, group_id: str, firebase_uid: str):
+    return {"message": "Analysis unshared successfully"}
 
 # GET /groups/{group_id}/analyses
 # - view all analyses shared in a group
 # - call when user clicks 'View Analysis' for another user
 # - parameters: group_id in URL, firebase_uid for auth
 # - return: array of shared analyses
+@app.get("/groups/{group_id}/analyses")
+def view_group_analyses(group_id: str, firebase_uid: str):
+    return {"analyses": []}
