@@ -9,6 +9,7 @@ import {
     signOut,
     onAuthStateChanged
 } from 'firebase/auth';
+import { db } from '../services/database';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -31,9 +32,25 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    const syncUserWithDatabase = async (firebaseUser) => {
+        try {
+            await db.syncUser({
+                firebase_uid: firebase_uid,
+                email: firebaseUser.email,
+                display_name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+                phone: null
+            });
+            console.log('User synced with database');
+        } catch (error) {
+            console.error('Failed to sync user with database', error);
+        }
+    };
+
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
+                await syncUserWithDatabase(firebaseUser);
+                
                 // User logged in
                 const userData = {
                     id: firebaseUser.uid,
