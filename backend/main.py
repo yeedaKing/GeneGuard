@@ -185,19 +185,27 @@ def export_csv(user_id: str):
 # - call immediately after user logs in 
 # - parameters: firebase_uid, email, display_name, phone 
 # - return: user id and profile info 
-
+@app.post("/users/sync")
+def sync_user(firebase_uid: str, email: str, display_name: str, phone: str):
+    return {"user_id": firebase_uid, "email": email, "display_name": display_name, "phone": phone}
 
 # GET /users/{firebase_uid}
 # - get user profile info
 # - call after loading the user's profile 
 # - parameters: firebase_uid in URL
 # - return: user details
+@app.get("/users/{firebase_uid}")
+def get_user_profile(firebase_uid: str):
+    return {"user_id": firebase_uid, "email": "<user_email>", "display_name": "<user_display_name>", "phone": "<user_phone>"}
 
 # PUT /users/{firebase_uid}/profile
 # - update user's display name and phone number 
 # - call after user clicks 'Save Profile' 
 # - parameters: firebase_uid in URL, display_name and phone 
-# - return: success confirmation
+# - return: success confirmation    
+@app.put("/users/{firebase_uid}/profile")
+def update_user_profile(firebase_uid: str, display_name: str, phone: str):
+    return {"message": "Profile updated successfully"}
 
 # ----------------
 # Group endpoints 
@@ -207,24 +215,40 @@ def export_csv(user_id: str):
 # - call when user clicks 'Create Group'
 # - parameters: group name, firebase_uid
 # - return: group ID, invite code, creation date 
+@app.post("/groups")
+def create_group(group_name: str, firebase_uid: str):
+    return {
+        "group_id": "generated_group_id",
+        "invite_code": "generated_invite_code",
+        "created_at": datetime.utcnow().isoformat()
+    }
 
 # POST /groups/join
 # - join group using invite code
 # - call when user clicks 'Join' using invite code
 # - parameters: invite_code, firebase_uid
 # - return: success message and group name
+@app.post("/groups/join")
+def join_group(invite_code: str, firebase_uid: str):
+    return {"message": "Group joined successfully", "group_name": "Example Group"}
 
 # GET /groups/{firebase_uid}
 # - get all groups a user belongs to 
 # - call when loading the GroupsPage
 # - parameters: firebase_uid in URL
 # - return: array of user's groups
+@app.get("/groups/{firebase_uid}")
+def get_user_groups(firebase_uid: str):
+    return {"groups": []}
 
 # DELETE /groups/{group_id}/leave
 # - remove yourself from a group
 # - call when user clicks 'Leave Group'
 # - parameters: group_id in URL, firebase_uid
 # - return: success message 
+@app.delete("/groups/{group_id}/leave")
+def leave_group(group_id: str, firebase_uid: str):
+    return {"message": "Left group successfully"}
 
 # ----------------
 # Analysis endpoints 
