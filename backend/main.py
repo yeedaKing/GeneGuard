@@ -37,9 +37,13 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://geneguard.vercel.app", 
-        "http://localhost:3000"],
+        "https://*.vercel.app",
+        "http://localhost:3000"
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_credentials=True,
+    expose_headers=["*"]
 )
 
 app.include_router(database_router)

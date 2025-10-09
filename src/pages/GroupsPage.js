@@ -439,7 +439,7 @@ export const GroupsPage = () => {
                                                             <td>
                                                                 {member.phone || 'Not provided'}
                                                             </td>
-                                                            <td>{new Date(member.joinedAt).toLocaleDateString()}</td>
+                                                            <td>{new Date(member.joined_at).toLocaleDateString()}</td>
                                                             <td>
                                                                 <span className={hasSharedAnalysis ? 'risk-low' : 'risk-medium'}>
                                                                     {hasSharedAnalysis ? 'Yes' : 'No'}
@@ -593,7 +593,7 @@ export const GroupsPage = () => {
                                 className="form-input"
                                 value={joinCode}
                                 onChange={(e) => setJoinCode(e.target.value)}
-                                placeholder="Enter 6-character code"
+                                placeholder="Enter 16-character code"
                                 required
                             />
                         </div>

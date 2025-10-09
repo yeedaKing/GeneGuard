@@ -12,11 +12,13 @@ export const AnalysisPage = () => {
     const { saveAnalysisResults, hasResults, currentAnalysis } = useAnalysis();
     
     const [file, setFile] = useState(null);
+    const [files, setFiles] = useState([]);
     const [disease, setDisease] = useState('');
     const [diseases, setDiseases] = useState([]);
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState('');
     const [dragOver, setDragOver] = useState(false);
+    const [uploadMode, setUploadMode] = useState('single');
 
     const [analysisMode, setAnalysisMode] = useState('specific');
     const [autoAnalyzing, setAutoAnalyzing] = useState(false);
@@ -51,11 +53,50 @@ export const AnalysisPage = () => {
         setDiseaseRankings([]);
     };
 
+    const handleMultipleFileSelect = (selectedFiles) => {
+        const fileArray = Array.from(selectedFiles);
+        const validFiles = [];
+        const errors = [];
+
+        fileArray.forEach(file => {
+            const validation = validateGenomicFile(file);
+            if (validation.isValid) {
+                validFiles.push(file);
+            } else {
+                errors.push(`${file.name}: ${validation.errors.join(', ')}`);
+            }
+        });
+
+        if (errors.length > 0) {
+            setError(errors.join('\n'));
+        }
+
+        if (validFiles.length > 0) {
+            setFiles(prevFiles => {
+                const uploadedFiles = [...prevFiles, ...validFiles];
+                const filteredFiles = uploadedFiles.filter((file, index, self) =>
+                    index === self.findIndex(f => f.name === file.name)
+                );
+                return filteredFiles;
+            });
+            setError('');
+        }
+    };
+
+    const removeFile = (fileName) => {
+        setFiles(prevFiles => prevFiles.filter(f => f.name !== fileName));
+    }
+
     const handleDrop = (e) => {
         e.preventDefault();
         setDragOver(false);
-        const droppedFile = e.dataTransfer.files[0];
-        if (droppedFile) handleFileSelect(droppedFile);
+
+        if (uploadMode === 'multiple') {
+            handleMultipleFileSelect(e.dataTransfer.files);
+        } else {
+            const droppedFile = e.dataTransfer.files[0];
+            if (droppedFile) handleFileSelect(droppedFile);
+        }
     };
 
     const handleDragOver = (e) => {
@@ -69,9 +110,16 @@ export const AnalysisPage = () => {
     };
 
     const startAnalysis = async () => {
-        if (!file || !disease) {
-            setError('Please select both a file and disease');
-            return;
+        if (uploadMode === 'single') {
+            if (!file || !disease) {
+                setError('Please select both a file and disease');
+                return;
+            }
+        } else {
+            if (files.length === 0 || !disease) {
+                setError('Please select files and disease');
+                return;
+            }
         }
 
         if (!user?.uid) {
@@ -83,10 +131,35 @@ export const AnalysisPage = () => {
         setError('');
 
         try {
-            const result = await api.uploadGenome(file, disease, 10000, user.uid);
+            if (uploadMode === 'single') {
+                const result = await api.uploadGenome(file, disease, 10000, user.uid);
+                saveAnalysisResults(result);
+                navigate('/summary');
+            } else {
+                const results = [];
+                const errors = [];
 
-            saveAnalysisResults(result);
-            navigate('/summary');
+                for (let i = 0; i < files.length; i++) {
+                    try {
+                        const result = await api.uploadGenome(files[i], disease, 10000, user.uid);
+                        results.push(result);
+                    } catch (error) {
+                        errors.push(`${files[i].name}: ${error.message}`);
+                    }
+                }
+
+                if (errors.length > 0) {
+                    setError(`Some uploads failed:\n${errors.join('\n')}`);
+                }
+
+                if (results.length > 0) {
+                    saveAnalysisResults(results[results.length - 1]);
+                    alert(`Successfully analyzed ${results.length} file(s)`);
+                    navigate('/summary');
+                } else {
+                    setError('All uploads failed');
+                }
+            }
         } catch (err) {
             setError(err.message || 'Analysis failed');
         } finally {
