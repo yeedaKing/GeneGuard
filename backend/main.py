@@ -222,9 +222,11 @@ def export_csv(analysis_id: str, db: Session = Depends(get_db)):
         raise HTTPException(404, "Result id not found")
 
     buf = io.StringIO()
-    writer = csv.DictWriter(buf, fieldnames=data["risks"][0].keys())
+    # writer = csv.DictWriter(buf, fieldnames=data["risks"][0].keys())
+    writer = csv.writer(buf)
     writer.writeheader()
-    writer.writerows(data["risks"])
+    writer.writerow(["gene", "risk_score", "risk_level", "rank"])
+    writer.writerows(rows)
     buf.seek(0)
     headers = {
         "Content-Disposition": f'attachment; filename="{analysis_id}.csv"'

@@ -100,7 +100,7 @@ class DatabaseService {
     }   
     
     async shareAnalysis(analysisId, groupId, firebase_uid) {
-        return this.request(`/analyses/share?$firebase_uid=${firebase_uid}`, {
+        return this.request(`/analyses/share?firebase_uid=${firebase_uid}`, {
             method: 'POST', 
             body: {
                 analysis_id: analysisId, 
@@ -110,12 +110,12 @@ class DatabaseService {
     }
 
     async unshareAnalysis(analysisId, groupId, firebase_uid) {
-        return this.request(`/analyses/${analysisId}/unshare/${groupId}?$firebase_uid=${firebase_uid}`, {
+        return this.request(`/analyses/${analysisId}/unshare/${groupId}?firebase_uid=${firebase_uid}`, {
             method: 'DELETE'
         });
     }   
     
-    async viewGroupAnalyses(groupId, firebase_uid) {
+    async getSharedAnalyses(groupId, firebase_uid) {
         return this.request(`/groups/${groupId}/analyses?firebase_uid=${firebase_uid}`);
     }
 
@@ -123,7 +123,7 @@ class DatabaseService {
         return this.request(`/users/${firebase_uid}/analyses`);
     }
 
-    async getAnalysisById(analysisId) {
+    async getAnalysisById(analysisId, firebase_uid) {
         return this.request(`/analyses/${analysisId}?firebase_uid=${firebase_uid}`);
     }
 }

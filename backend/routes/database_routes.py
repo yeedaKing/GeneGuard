@@ -97,7 +97,7 @@ async def sync_user(user_data: UserCreate, db: Session = Depends(get_db)):
 
 @router.get("/users/{firebase_uid}")
 async def get_user(firebase_uid: str, db: Session = Depends(get_db)):
-    query = ("""
+    query = text("""
         SELECT id, firebase_uid, email, display_name, phone
         FROM users 
         WHERE firebase_uid = :uid
@@ -338,7 +338,7 @@ def share_analysis(share_data: AnalysisShare, firebase_uid: str, db: Session = D
             EXISTS(
                 SELECT 1 
                 FROM genetic_analyses 
-                WHERE id = :analysis_id and user_id = : user_id
+                WHERE id = :analysis_id and user_id = :user_id
             ) as owns_analysis,
             EXISTS(
                 SELECT 1 
@@ -477,15 +477,33 @@ async def get_user_analyses(firebase_uid: str, db: Session = Depends(get_db)):
     })
     analyses = result.fetchall()
     
-    return [{
-        "id": str(analysis[0]),
-        "user_id": str(analysis[0]),
-        "disease": analysis[1],
-        "filename": analysis[2],
-        "gene_count": analysis[3],
-        "timestamp": analysis[4].isoformat(),
-        "risk_count": analysis[5]
-        } for analysis in analyses]
+    analyses_with_risk = []
+    for analysis in analyses:
+        risks_query = text("""
+            SELECT gene, risk_score, risk_level, rank
+            FROM risk_results
+            WHERE analysis_id = :analysis_id
+            ORDER BY rank
+        """)
+        risks_result = db.execute(risks_query, {
+            "analysis_id": str(analysis[0])
+        })
+        risks = risks_result.fetchall()
+        analyses_with_risk.append({
+            "id": str(analysis[0]),
+            "user_id": str(analysis[0]),
+            "disease": analysis[1],
+            "filename": analysis[2],
+            "gene_count": analysis[3],
+            "timestamp": analysis[4].isoformat(),
+            "risks": [{
+                "gene": r[0], 
+                "risk": r[1],
+                "level": r[2],
+                "rank": r[3]
+            } for r in risks]   
+        })
+    return analyses_with_risk
 
 @router.get("/analyses/{analysis_id}")
 async def get_analysis_by_id(analysis_id: str, db: Session = Depends(get_db)):
@@ -540,11 +558,9 @@ async def get_analysis_by_id(analysis_id: str, db: Session = Depends(get_db)):
     return {
         "id": str(analysis[0]),
         "user_id": str(analysis[0]),
-        "userId": str(analysis[1]),
-        "disease": analysis[2],
-        "filename": analysis[3],
-        "gene_count": analysis[4],
-        "timestamp": analysis[5].isoformat(),
-        "risks": formatted_risks,
-        "version": "1.0"
+        "disease": analysis[1],
+        "filename": analysis[2],
+        "gene_count": analysis[3],
+        "timestamp": analysis[4].isoformat(),
+        "risks": formatted_risks
     }

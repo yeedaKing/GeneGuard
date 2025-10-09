@@ -1,8 +1,35 @@
+import { useState, useEffect, useContext } from 'react';
 import { Dropdown } from 'react-bootstrap';
 import { useAnalysis } from '../context/AnalysisContext';
+import { AuthContext } from '../context/AuthContext';
+import { db } from '../services/database';
 
 export const AnalysisSwitcher = () => {
-    const { analysisHistory, currentAnalysis, setCurrentAnalysis } = useAnalysis();
+    const { user } = useContext(AuthContext);
+    const { currentAnalysis, setCurrentAnalysis } = useAnalysis();
+    const [analysisHistory, setAnalysisHistory] = useState([]);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (user?.uid) {
+            loadAnalysisHistory();
+        }
+    }, [user?.uid]);
+
+    const loadAnalysisHistory = async () => {
+        if (!user?.uid) return null;
+
+        setLoading(true);
+
+        try {
+            const analyses = await db.getUserAnalyses(user.uid);
+            setAnalysisHistory(analyses || []);
+        } catch (error) {
+            console.error('Failed to load analysis history:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     if (analysisHistory.length <= 1) {
         return null; // Don't show if only one or no analyses

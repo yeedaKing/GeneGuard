@@ -4,9 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { api, validateGenomicFile } from '../services/api';
 import { useAnalysis } from '../context/AnalysisContext';
+import { AuthContext } from '../context/AuthContext';
 
 export const AnalysisPage = () => {
     const navigate = useNavigate();
+    const { user } = useContext(AuthContext);
     const { saveAnalysisResults, hasResults, currentAnalysis } = useAnalysis();
     
     const [file, setFile] = useState(null);
@@ -27,16 +29,12 @@ export const AnalysisPage = () => {
 
     const loadDiseases = async () => {
         try {
-            console.log('Calling getDiseases...');
             const response = await api.getDiseases();
-            console.log('Response received:', response);
-            console.log('Diseases array:', response.diseases);
             setDiseases(response.diseases || []);
             if (response.diseases?.length > 0) {
                 setDisease(response.diseases[0]);
             }
         } catch (err) {
-            console.log('Error in loadDiseases:', err);
             setError('Failed to load diseases: ' + err.message);
         }
     };
@@ -76,11 +74,16 @@ export const AnalysisPage = () => {
             return;
         }
 
+        if (!user?.uid) {
+            setError('Please log in to save your analysis');
+            return;
+        }
+
         setUploading(true);
         setError('');
 
         try {
-            const result = await api.uploadGenome(file, disease);
+            const result = await api.uploadGenome(file, disease, 10000, user.uid);
 
             saveAnalysisResults(result);
             navigate('/summary');
@@ -112,11 +115,16 @@ export const AnalysisPage = () => {
      };
 
     const analyzeSpecificFromRanking = async (selectedDisease) => {
+        if (!user?.uid) {
+            setError('Please log in to save your analysis');
+            return;
+        }
+        
         setUploading(true);
         setError('');
 
         try {
-            const result = await api.uploadGenome(file, selectedDisease);
+            const result = await api.uploadGenome(file, selectedDisease, 10000, user.uid);
             saveAnalysisResults(result);
             navigate('/summary');
         } catch (err) {
