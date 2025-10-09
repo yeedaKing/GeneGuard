@@ -11,7 +11,6 @@ export const AnalysisPage = () => {
     const { user } = useContext(AuthContext);
     const { saveAnalysisResults, hasResults, currentAnalysis } = useAnalysis();
     
-    const [file, setFile] = useState(null);
     const [files, setFiles] = useState([]);
     const [disease, setDisease] = useState('');
     const [diseases, setDiseases] = useState([]);
@@ -41,19 +40,7 @@ export const AnalysisPage = () => {
         }
     };
 
-    const handleFileSelect = (selectedFile) => {
-        const validation = validateGenomicFile(selectedFile);
-        if (!validation.isValid) {
-            setError(validation.errors.join(', '));
-            return;
-        }
-        setFile(selectedFile);
-        setError('');
-        setShowRankings(false);
-        setDiseaseRankings([]);
-    };
-
-    const handleMultipleFileSelect = (selectedFiles) => {
+    const handleFileSelect = (selectedFiles) => {
         const fileArray = Array.from(selectedFiles);
         const validFiles = [];
         const errors = [];
@@ -80,6 +67,8 @@ export const AnalysisPage = () => {
                 return filteredFiles;
             });
             setError('');
+            setShowRankings(false);
+            setDiseaseRankings([]);
         }
     };
 
@@ -110,16 +99,9 @@ export const AnalysisPage = () => {
     };
 
     const startAnalysis = async () => {
-        if (uploadMode === 'single') {
-            if (!file || !disease) {
-                setError('Please select both a file and disease');
-                return;
-            }
-        } else {
-            if (files.length === 0 || !disease) {
-                setError('Please select files and disease');
-                return;
-            }
+        if (files.length === 0 || !disease) {
+            setError('Please select files and disease');
+            return;
         }
 
         if (!user?.uid) {
@@ -131,8 +113,8 @@ export const AnalysisPage = () => {
         setError('');
 
         try {
-            if (uploadMode === 'single') {
-                const result = await api.uploadGenome(file, disease, 10000, user.uid);
+            if (files.length === 1) {
+                const result = await api.uploadGenome(files[0], disease, 10000, user.uid);
                 saveAnalysisResults(result);
                 navigate('/summary');
             } else {
@@ -168,8 +150,8 @@ export const AnalysisPage = () => {
     };
 
     const startAutoAnalysis = async () => {
-        if (!file) {
-            setError('Please select a file first');
+        if (files.length === 0) {
+            setError('Please select file(s) first');
             return;
         }
 
@@ -177,7 +159,7 @@ export const AnalysisPage = () => {
         setError('');
 
         try {
-            const result = await api.analyzeAllDiseases(file);
+            const result = await api.analyzeAllDiseases(files[0]);
             setDiseaseRankings(result.candidates || []);
             setShowRankings(true);
         } catch (err) {
@@ -197,7 +179,7 @@ export const AnalysisPage = () => {
         setError('');
 
         try {
-            const result = await api.uploadGenome(file, selectedDisease, 10000, user.uid);
+            const result = await api.uploadGenome(files[0], selectedDisease, 10000, user.uid);
             saveAnalysisResults(result);
             navigate('/summary');
         } catch (err) {
@@ -207,7 +189,6 @@ export const AnalysisPage = () => {
         }
     };
 
-    // Keep all your existing JSX but update the form section:
     return (
         <section className="upload-section">
             <Container>
@@ -338,7 +319,7 @@ export const AnalysisPage = () => {
                             </div>
 
                             {/* File Upload Area */}
-                            {!file ? (
+                            {files.length === 0 ? (
                                 <div
                                     className={`upload-area ${dragOver ? 'dragover' : ''}`}
                                     onDrop={handleDrop}
@@ -347,8 +328,8 @@ export const AnalysisPage = () => {
                                     onClick={() => document.getElementById('file-input').click()}
                                 >
                                     <div className="upload-icon"></div>
-                                    <h3>Drag & Drop Your File Here</h3>
-                                    <p>Or click to browse files</p>
+                                    <h3>Drag & Drop Your File(s) Here</h3>
+                                    <p>Upload one or more files</p>
                                     <p style={{ fontSize: '14px', opacity: '0.7', marginTop: '16px' }}>
                                         Supported: .txt, .tsv, .vcf, .vcf.gz files up to 50MB
                                     </p>
@@ -368,11 +349,25 @@ export const AnalysisPage = () => {
                                     textAlign: 'center'
                                 }}>
                                     <h4 style={{ color: '#fff', marginBottom: '16px' }}>
-                                        File Ready for Analysis
+                                        {files.length === 1 ? 'File Ready' : `${files.length} Files Ready`}
                                     </h4>
+                                    <div style={{ marginBottom: '24px', textAlign: 'left' }}>
+                                        {files.map((f, index) => (
+                                            <div key={index} className="file-item">
+                                                <span style={{ color: 'var(--color-light-gray)' }}>
+                                                    <strong>{f.name}</strong> ({(f.size / (1024 * 1024)).toFixed(2)} MB)
+                                                </span>
+                                                <button 
+                                                    onClick={() => removeFile(f.name)}
+                                                    className="file-remove-btn"
+                                                >
+                                                    Remove
+                                                </button>
+                                            </div>    
+                                        ))}
+                                    </div>
+
                                     <p style={{ color: 'var(--color-light-gray)', marginBottom: '24px' }}>
-                                        <strong>{file.name}</strong><br />
-                                        Size: {(file.size / (1024 * 1024)).toFixed(2)} MB<br />
                                         {analysisMode === 'specific' && `Disease: ${disease.replace(/_/g, ' ')}`}
                                         {analysisMode === 'auto' && 'Mode: Auto Disease Ranking'}
                                     </p>
@@ -380,21 +375,21 @@ export const AnalysisPage = () => {
                                     {(uploading || autoAnalyzing) ? (
                                         <div style={{ color: '#fff' }}>
                                             <div className="loading" style={{ margin: '0 auto 16px' }}></div>
-                                            <p>{autoAnalyzing ? 'Ranking diseases by risk...' : 'Analyzing your genetic data...'}</p>
+                                            <p>{autoAnalyzing ? 'Ranking diseases by risk...' : `Analyzing ${files.length} file(s)...`}</p>
                                         </div>
                                     ) : (
                                         <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
                                             {analysisMode === 'specific' ? (
                                                 <button className="btn-primary-large" onClick={startAnalysis}>
-                                                    Start Analysis
+                                                    Analyze {files.length} File{files.length > 1 ? 's' : ''}
                                                 </button>
                                             ) : (
                                                 <button className="btn-primary-large" onClick={startAutoAnalysis}>
                                                     Rank All Diseases
                                                 </button>                                                
                                             )}
-                                            <button className="btn-secondary-large" onClick={() => setFile(null)}>
-                                                Choose Different File
+                                            <button className="btn-secondary-large" onClick={() => setFile([])}>
+                                                Clear All
                                             </button>
                                         </div>
                                     )}

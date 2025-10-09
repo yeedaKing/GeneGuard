@@ -732,6 +732,33 @@ nav.navbar .navbar-nav a.nav-link.navbar-link.active {
   line-height: 1.5;
 }
 
+.file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.file-remove-btn {
+  background: transparent;
+  border: 1px solid #dc3545;
+  color: #dc3545;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.file-remove-btn:hover {
+  background: #dc3545;
+  color: #fff;
+}
+
 .results-section {
   padding: 120px 0 120px 0;
   background: var(--color-dark-blue);
