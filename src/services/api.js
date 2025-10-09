@@ -28,7 +28,7 @@ class ApiService {
         return this.request('/diseases');
     }
 
-    uploadGenome = async (file, disease, maxRecords = 10000) => {
+    uploadGenome = async (file, disease, maxRecords = 10000, firebase_uid = null) => {
         const formData = new FormData();
         formData.append('file', file);
         
@@ -36,6 +36,10 @@ class ApiService {
             disease: disease,
             max_records: maxRecords.toString()
         });
+
+        if (firebase_uid) {
+            queryParams.append('firebase_uid', firebase_uid);
+        }
 
         return this.request(`/upload-genome?${queryParams}`, {
             method: 'POST',

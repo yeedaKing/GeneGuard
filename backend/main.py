@@ -1,9 +1,9 @@
 # main.py
-from fastapi import FastAPI, File, UploadFile, HTTPException, BackgroundTasks
+from fastapi import FastAPI, File, UploadFile, HTTPException, BackgroundTasks, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pathlib import Path
-import io, csv, tempfile, shutil, uuid
+import io, csv, tempfile, shutil, uuid, os
 
 from services.disease_ranker import disease_scores
 from services.genome_parser import parse_genome_file  # TXT handler
@@ -12,29 +12,16 @@ from services.annotate import annotate_variants
 from services.burden import burden_scores
 from services.risk_annotator import annotate_risks
 
-# new imports for database implementation 
-from fastapi import Depends, Header
+# Database imports
 from sqlalchemy import create_engine, text 
 from sqlalchemy.orm import sessionmaker, Session
-from pydantic import BaseModel
-from typing import Optional, List 
-import os 
-from dotenv import load_dotenv
+from sqlalchemy.pool import QueuePool
+from typing import Optional
 from datetime import datetime
+from dotenv import load_dotenv
 
-load_dotenv()
-
-# Database settings
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://localhost/geneguard")
-engine = create_engine(
-    DATABASE_URL, 
-    poolclass=QueuePool, 
-    pool_size=5, 
-    max_overflow=10,
-    pool_pre_ping=True,
-    pool_recycle=3600,
-)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+from routes.database import get_db
+from routes.database_routes import router as database_router, get_firebase_uid, log_action
 
 TMPDIR = Path(tempfile.gettempdir())
 SUPPORTED_DISEASES = ["alzheimers", "CHD", "hypertension", "multiple_sclerosis", "obesity",
@@ -55,6 +42,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(database_router)
+
 # utility
 def _detect_handler(filename: str):
     if filename.endswith((".txt", ".tsv")):
@@ -64,9 +53,9 @@ def _detect_handler(filename: str):
     else:
         raise HTTPException(415, "Unsupported file type")
 
-# bad in-mem store (swap for DB later)
-_USER_STORE: dict[str, dict] = {}
-
+# bad in-mem store (swap for DB later) (i got rid of this)
+# _USER_STORE: dict[str, dict] = {}
+        
 # routes
 @app.get("/diseases")
 def list_diseases():
@@ -78,6 +67,8 @@ async def upload_genome(
     disease: str,
     file: UploadFile = File(...),
     max_records: int = 10_000,
+    firebase_uid: Optional[str] = None, 
+    db: Session = Depends(get_db)
 ):
     if disease not in SUPPORTED_DISEASES:
         raise HTTPException(400, "Unsupported disease")
@@ -103,23 +94,76 @@ async def upload_genome(
 
     # disease-risk mapping
     risks = annotate_risks(disease, burden or genes)
+    analysis_id = str(uuid.uuid4())
 
     # persist for CSV route
-    user_id = str(uuid.uuid4())
-    _USER_STORE[user_id] = {
-        "disease": disease,
-        "filename": file.filename,
-        "genes": list(genes),
-        "risks": risks,
-    }
-
+    # user_id = str(uuid.uuid4())
+    # _USER_STORE[user_id] = {
+    #     "disease": disease,
+    #     "filename": file.filename,
+    #     "genes": list(genes),
+    #     "risks": risks,
+    # }
+    
+    if firebase_uid and db:
+        try:
+            user_id = get_firebase_uid(db, firebase_uid)
+            
+            save_query = text("""
+                INSERT INTO genetic_analyses (id, user_id, disease, filename, gene_count)
+                VALUES (:id, :user_id, :disease, :filename, :gene_count)
+            """)
+            db.execute(save_query, {
+                "id": analysis_id, 
+                "user_id": user_id, 
+                "disease": disease, 
+                "filename": file.filename,
+                "gene_count": len(genes)
+            })
+            
+            # save the risk results
+            if risks:
+                for risk in risks:
+                    risk_id = str(uuid.uuid4())
+                    risk_query = text(""" 
+                        INSERT INTO risk_results (id, analysis_id, gene, risk_score, risk_level, rank)
+                        VALUES (:id, :analysis_id, :gene, :risk_score, :risk_level, :rank)
+                    """)
+                    db.execute(risk_query, {
+                        "id": risk_id, 
+                        "analysis_id": analysis_id,
+                        "gene": risk.get("gene"),
+                        "risk_score": risk.get("risk"),
+                        "risk_level": risk.get("level"),
+                        "rank": risk.get("rank")
+                    })
+                    
+                    if risk.get("tips"):
+                        for idx, tip in enumerate(risk.get("tips", [])):
+                            tip_query = text("""
+                                INSERT INTO recommendations (risk_result_id, tip_text, tip_order)
+                                VALUES (:risk_result_id, :tip_text, :tip_order)                               
+                            """)
+                            db.execute(tip_query, {
+                                "risk_result_id": risk_id, 
+                                "tip_text": tip, 
+                                "tip_order": idx
+                            })
+            db.commit()
+            log_action(db, user_id, "analyze_genome", "analysis", analysis_id)
+        
+        except Exception as e:
+            db.rollback()
+            print(f"Database save error: {e}")
+            
     # response
     return {
-        "user_id": user_id,
+        "user_id": analysis_id,
         "gene_count": len(genes),
         "disease": disease,
         "risks": risks,
-        "disclaimer": DISCLAIMER_TXT
+        "disclaimer": DISCLAIMER_TXT,
+        "timestamp": datetime.now().isoformat()
     }
 
 @app.post("/auto-rank")
@@ -159,235 +203,32 @@ async def auto_rank_genome(
         "disclaimer": DISCLAIMER_TXT
     }
 
-@app.get("/results/{user_id}/csv")
-def export_csv(user_id: str):
-    data = _USER_STORE.get(user_id)
-    if not data:
+@app.get("/results/{analysis_id}/csv")
+def export_csv(analysis_id: str, db: Session = Depends(get_db)):
+    # data = _USER_STORE.get(user_id)
+    # Store in database
+    query = text("""
+        SELECT rr.gene, rr.risk_score, rr.risk_level, rr.rank
+        FROM risk_results rr
+        WHERE rr.analysis_id = :analysis_id
+        ORDER BY rr.rank
+    """)
+    result = db.execute(query, {
+        "analysis_id": analysis_id
+    })
+    rows = result.fetchall()
+    
+    if not rows:
         raise HTTPException(404, "Result id not found")
 
     buf = io.StringIO()
-    writer = csv.DictWriter(buf, fieldnames=data["risks"][0].keys())
+    # writer = csv.DictWriter(buf, fieldnames=data["risks"][0].keys())
+    writer = csv.writer(buf)
     writer.writeheader()
-    writer.writerows(data["risks"])
+    writer.writerow(["gene", "risk_score", "risk_level", "rank"])
+    writer.writerows(rows)
     buf.seek(0)
     headers = {
-        "Content-Disposition": f'attachment; filename="{user_id}.csv"'
+        "Content-Disposition": f'attachment; filename="{analysis_id}.csv"'
     }
     return StreamingResponse(buf, media_type="text/csv", headers=headers)
-
-# Database implementation endpoints
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-# ----------------
-# User endpoints 
-# ----------------
-# POST /users/sync 
-# - create the user in database after login (using Firebase)
-# - call immediately after user logs in 
-# - parameters: firebase_uid, email, display_name, phone 
-# - return: user id and profile info 
-
-# GET /users/{firebase_uid}
-# - get user profile info
-# - call after loading the user's profile 
-# - parameters: firebase_uid in URL
-# - return: user details
-
-# PUT /users/{firebase_uid}/profile
-# - update user's display name and phone number 
-# - call after user clicks 'Save Profile' 
-# - parameters: firebase_uid in URL, display_name and phone 
-# - return: success confirmation    
-
-# ----------------
-# Group endpoints 
-# ----------------
-# POST /groups 
-# - create new group 
-# - call when user clicks 'Create Group'
-# - parameters: group name, firebase_uid
-# - return: group ID, invite code, creation date 
-
-# POST /groups/join
-# - join group using invite code
-# - call when user clicks 'Join' using invite code
-# - parameters: invite_code, firebase_uid
-# - return: success message and group name
-
-# GET /groups/{firebase_uid}
-# - get all groups a user belongs to 
-# - call when loading the GroupsPage
-# - parameters: firebase_uid in URL
-# - return: array of user's groups
-
-# DELETE /groups/{group_id}/leave
-# - remove yourself from a group
-# - call when user clicks 'Leave Group'
-# - parameters: group_id in URL, firebase_uid
-# - return: success message 
-
-# ----------------
-# Analysis endpoints 
-# ----------------
-# POST /analyses/share
-# - share your analysis results with a group
-# - call when user clicks 'Share My Analysis'
-# - parameters: analysis_id, group_id, firebase_uid
-# - return: success message 
-@router.post("/analyses/share")
-async def share_analysis(
-    analysis_id: str,
-    group_id: str,
-    firebase_uid: str,
-    db: Session = Depends(get_db)
-):
-    # get user_id from firebase_uid
-    user_query = text("""
-        SELECT id
-        FROM users
-        WHERE firebase_uid = :uid
-    """)
-    user_row = db.execute(user_query, {"uid": firebase_uid}).fetchone()
-    if not user_row:
-        raise HTTPException(404, "User not found")
-    user_id = user_row[0]
-
-    # check membership in group
-    check_query = text("""
-        SELECT id
-        FROM group_members
-        WHERE group_id = :group_id AND user_id = :user_id
-    """)
-    membership = db.execute(check_query, {
-        "group_id": group_id,
-        "user_id": user_id
-    }).fetchone()
-    if not membership:
-        raise HTTPException(403, "Not a member of this group")
-
-    # insert share record
-    insert_query = text("""
-        INSERT INTO shared_analyses (analysis_id, group_id, shared_by)
-        VALUES (:analysis_id, :group_id, :user_id)
-        RETURNING id, analysis_id, group_id, shared_by, shared_at
-    """)
-    result = db.execute(insert_query, {
-        "analysis_id": analysis_id,
-        "group_id": group_id,
-        "user_id": user_id
-    })
-    db.commit()
-    row = result.fetchone()
-
-    return {
-        "message": "Analysis shared successfully",
-        "share": {
-            "id": str(row[0]),
-            "analysis_id": row[1],
-            "group_id": row[2],
-            "shared_by": row[3],
-            "shared_at": row[4].isoformat()
-        }
-    }
-
-# DELETE /analyses/{analysis_id}/unshare/{group_id}
-# - stop sharing your results with group
-# - call when user clicks 'Unshare My Analysis'
-# - parameters: analysis_id and group_id in URL, firebase_uid
-# - return: success message 
-@router.delete("/analyses/{analysis_id}/unshare/{group_id}")
-async def unshare_analysis(
-    analysis_id: str, 
-    group_id: str, 
-    firebase_uid: str,
-    db: Session = Depends(get_db)
-    ):
-    # get user_id from firebase_uid
-    user_query = text("""
-        SELECT id
-        FROM users
-        WHERE firebase_uid = :uid
-    """)
-    user_row = db.execute(user_query, {"uid": firebase_uid}).fetchone()
-    if not user_row:
-        raise HTTPException(404, "User not found")
-    user_id = user_row[0]
-
-    # check membership in group
-    check_query = text("""
-        SELECT id
-        FROM group_members
-        WHERE group_id = :group_id AND user_id = :user_id
-    """)
-    membership = db.execute(check_query, {
-        "group_id": group_id,
-        "user_id": user_id
-    }).fetchone()
-    if not membership:
-        raise HTTPException(403, "Not a member of this group")
-
-    # delete share record
-    delete_query = text("""
-        DELETE FROM shared_analyses
-        WHERE analysis_id = :analysis_id AND group_id = :group_id AND shared_by = :user_id
-    """)
-    db.execute(delete_query, {
-        "analysis_id": analysis_id,
-        "group_id": group_id,
-        "user_id": user_id
-    })
-    db.commit()
-
-    return {"message": "Analysis unshared successfully"}
-
-# GET /groups/{group_id}/analyses
-# - view all analyses shared in a group
-# - call when user clicks 'View Analysis' for another user
-# - parameters: group_id in URL, firebase_uid for auth
-# - return: array of shared analyses
-@router.get("/groups/{group_id}/analyses")
-async def view_shared_analyses(
-    group_id: str,
-    firebase_uid: str,
-    db: Session = Depends(get_db)
-    ):
-
-    # get user_id from firebase_uid
-    user_query = text("""
-        SELECT id
-        FROM users
-        WHERE firebase_uid = :uid
-    """)
-    user_row = db.execute(user_query, {"uid": firebase_uid}).fetchone()
-    if not user_row:
-        raise HTTPException(404, "User not found")
-    user_id = user_row[0]
-
-    # check membership in group
-    check_query = text("""
-        SELECT id
-        FROM group_members
-        WHERE group_id = :group_id AND user_id = :user_id
-    """)
-    membership = db.execute(check_query, {
-        "group_id": group_id,
-        "user_id": user_id
-    }).fetchone()
-    if not membership:
-        raise HTTPException(403, "Not a member of this group")
-
-    # get shared analyses
-    shared_query = text("""
-        SELECT a.id, a.name, a.shared_by, a.shared_at
-        FROM shared_analyses a
-        WHERE a.group_id = :group_id
-    """)
-    shared_analyses = db.execute(shared_query, {"group_id": group_id}).fetchall()
-
-    return {"shared_analyses": [dict(row) for row in shared_analyses]}

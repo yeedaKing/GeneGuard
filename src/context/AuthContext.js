@@ -9,6 +9,7 @@ import {
     signOut,
     onAuthStateChanged
 } from 'firebase/auth';
+import { db } from '../services/database';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -32,29 +33,48 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
-                // User logged in
-                const userData = {
-                    id: firebaseUser.uid,
-                    name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
-                    email: firebaseUser.email,
-                    profilePicture: firebaseUser.photoURL,
-                    authProvider: firebaseUser.providerData[0]?.providerId.includes('google') ? 'google' : 'email'
-                };
+                try {
+                    const dbUser = await db.syncUser({
+                        firebase_uid: firebaseUser.uid,
+                        email: firebaseUser.email,
+                        display_name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+                        phone: null
+                    });
                 
-                setUser(userData);
-                localStorage.setItem('userData', JSON.stringify(userData));
+                    // User logged in
+                    const userData = {
+                        id: dbUser.id,
+                        uid: firebaseUser.uid,
+                        name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+                        email: firebaseUser.email,
+                        phone: dbUser.phone,
+                        profilePicture: firebaseUser.photoURL,
+                        authProvider: firebaseUser.providerData[0]?.providerId.includes('google') ? 'google' : 'email'
+                    };
+                
+                    setUser(userData);
+                } catch (error) {
+                    console.error('Failed to sync user with database:', error);
+                    const userData = {
+                        uid: firebaseUser.uid,
+                        name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+                        email: firebaseUser.email,
+                        profilePicture: firebaseUser.photoURL,
+                        authProvider: firebaseUser.providerData[0]?.providerId.includes('google') ? 'google' : 'email'
+                    };  
+                    setUser(userData);                  
+                }
             } else {
                 // User logged out
                 setUser(null);
-                localStorage.removeItem('userData');
             }
             setLoading(false);
         });
 
         return () => unsubscribe();
-    }, []); // No dependencies - this effect only runs once
+    }, []);
 
     const loginWithEmail = async (email, password) => {
         try {

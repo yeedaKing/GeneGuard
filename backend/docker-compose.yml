@@ -1,4 +1,20 @@
 services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: geneguard
+      POSTGRES_USER: geneguard_user
+      POSTGRES_PASSWORD: geneguard_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U geneguard_user"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
   backend:
     build: .
     ports:
@@ -7,4 +23,12 @@ services:
       - .:/app
     environment:
       - PYTHONPATH=/app
+      - DATABASE_URL=postgresql://geneguard_user:geneguard_pass@postgres:5432/geneguard
+      - FRONTEND_URL=http://localhost:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
+
+volumes:
+  postgres_data:

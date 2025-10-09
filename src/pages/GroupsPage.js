@@ -3,12 +3,14 @@ import { Container, Row, Col, Table, Modal, Alert, Card, Form } from 'react-boot
 import { motion } from 'framer-motion';
 import { AuthContext } from '../context/AuthContext';
 import { useAnalysis } from '../context/AnalysisContext';
+import { db } from '../services/database';
 
 export const GroupsPage = () => {
     const { user } = useContext(AuthContext);
     const { currentAnalysis } = useAnalysis();
     const [groups, setGroups] = useState([]);
     const [selectedGroup, setSelectedGroup] = useState(null);
+    const [groupMembers, setGroupMembers] = useState([]);
     const [sharedAnalyses, setSharedAnalyses] = useState({});
     
     // Modal states
@@ -25,41 +27,39 @@ export const GroupsPage = () => {
 
     // Form states
     const [newGroupName, setNewGroupName] = useState('');
-    const [inviteCode, setInviteCode] = useState('');
     const [joinCode, setJoinCode] = useState('');
-
     const [editingProfile, setEditingProfile] = useState({
-        name: '', 
+        name: '',
         phone: ''
     });
 
-    // Load groups from localStorage on mount
     useEffect(() => {
-        loadGroupsFromStorage();
-        loadSharedAnalyses();
-        loadUserProfile();
+        if (user?.uid) {
+            loadGroups();
+            loadUserProfile();
+        }
         setLoading(false);
-    }, [user]);
+    }, [user?.uid]);
 
-    const loadUserProfile = () => {
-        if (!user?.id) return;
+    useEffect(() => {
+        if (selectedGroup?.id && user?.uid) {
+            loadGroupMembers(selectedGroup.id);
+            loadSharedAnalyses(selectedGroup.id);
+        }
+    }, [selectedGroup?.id, user?.uid]);
 
-        const userProfile = localStorage.getItem(`profile_${user.id}`);
-        if (userProfile) {
-            try {
-                const profile = JSON.parse(userProfile);
-                setEditingProfile({
-                    name: profile.name || user.name,
-                    phone: profile.phone || ''
-                });
-            } catch (error) {
-                console.error('Failed to parse user profile:', error);
-                setEditingProfile({
-                    name: user.name,
-                    phone: ''
-                });
-            }
-        } else {
+    const loadUserProfile = async () => {
+        if (!user?.uid) return;
+
+        try {
+            const profile = await db.getCurrentUser(user.uid);
+
+            setEditingProfile({
+                name: profile.display_name || user.name,
+                phone: profile.phone || ''
+            });
+        } catch (error) {
+            console.error('Failed to parse user profile:', error);
             setEditingProfile({
                 name: user.name,
                 phone: ''
@@ -67,237 +67,152 @@ export const GroupsPage = () => {
         }
     };
 
-    const saveUserProfile = () => {
-        if (!user?.id) return;
+    const saveUserProfile = async () => {
+        if (!user?.uid) return;
 
-        const profile = {
-            name: editingProfile.name,
-            phone: editingProfile.phone,
-            email: user.email,
-            updatedAt: new Date().toISOString()
-        };
+        try {
+            await db.updateProfile(user.uid, editingProfile.name, editingProfile.phone);
 
-        localStorage.setItem(`profile_${user.id}`, JSON.stringify(profile));
-
-        const updatedGroups = groups.map(group => ({
-            ...group,
-            members: group.members.map(member =>
-                member.id === user.id
-                    ? { ...member, name: profile.name, phone: profile.phone }
-                    :member
-            )
-        }));
-
-        setGroups(updatedGroups);
-        saveGroupsToStorage(updatedGroups);
-
-        if (selectedGroup) {
-            const updatedSelectedGroup = updatedGroups.find(g => g.id === selectedGroup.id);
-            setSelectedGroup(updatedSelectedGroup);
-        }
-
-        updatedGroups.forEach(group => {
-            if (group.creator === user.id || group.members.some(m => m.id === user.id)) {
-                updateGroupInCreatorStorage(group);
+            await loadGroups();
+            if (selectedGroup) {
+                await loadGroupMembers(selectedGroup.id);
             }
-        });
 
-        setShowProfileModal(false);
-        setSuccess('Profile updated successfully!');
+            setShowProfileModal(false);
+            setSuccess('Profile updated successfully!');
+        } catch (error) {
+            setError('Failed to update profile: ' + error.message);
+        }
     };
 
-    const getUserProfile = (userID) => {
-        const profile = localStorage.getItem(`profile_${userID}`);
-        if (profile) {
-            try {
-                return JSON.parse(profile);
-            } catch (error) {
-                console.error('Failed to parse profile:', error);
+    const loadGroups = async () => {
+        if (!user?.uid) return;
+
+        try {
+            const userGroups = await db.getUserGroups(user.uid);
+            setGroups(userGroups);
+            if (userGroups.length > 0 && !selectedGroup) {
+                setSelectedGroup(userGroups[0]);
             }
+        } catch (error) {
+            console.error('Failed to load groups:', error);
+            setError('Failed to load groups');
         }
-        return null;
     };
 
-    const loadGroupsFromStorage = () => {
-        if (!user?.id) return;
-        
-        const userGroups = localStorage.getItem(`groups_${user.id}`);
-        if (userGroups) {
-            try {
-                const parsed = JSON.parse(userGroups);
-                setGroups(parsed);
-                if (parsed.length > 0) {
-                    setSelectedGroup(parsed[0]);
+    const loadGroupMembers = async (groupId) => {
+        if (!user?.uid) return;
+
+        try {
+            const members = await db.getGroupMembers(groupId, user.uid);
+            setGroupMembers(members);
+        } catch (error) {
+            console.error('Failed to load group members:', error);
+            setError('Failed to load group members');
+        }
+    };
+
+    const loadSharedAnalyses = async (groupId) => {
+        if (!user?.uid) return;
+
+        try {
+            const analyses = await db.getSharedAnalyses(groupId, user.uid);
+
+            const analysesMap = {};
+            analyses.forEach(analysis => {
+                const sharer = groupMembers.find(m => m.name === analysis.share_by);
+                if (sharer) {
+                    analysesMap[sharer.firebase_uid] = analysis;
                 }
-            } catch (error) {
-                console.error('Failed to parse groups:', error);
-            }
+            });
+
+            setSharedAnalyses(analysesMap);
+        } catch (error) {
+            console.error('Failed to load shared analyses:', error);
         }
     };
 
-    const loadSharedAnalyses = () => {
-        const shared = localStorage.getItem('sharedAnalyses');
-        if (shared) {
-            try {
-                setSharedAnalyses(JSON.parse(shared));
-            } catch (error) {
-                console.error('Failed to parse shared analyses:', error);
-            }
-        }
-    };
-
-    const saveGroupsToStorage = (updatedGroups) => {
-        if (!user?.id) return;
-        localStorage.setItem(`groups_${user.id}`, JSON.stringify(updatedGroups));
-        setGroups(updatedGroups);
-    };
-
-    const createGroup = (e) => {
+    const createGroup = async (e) => {
         e.preventDefault();
         if (!newGroupName.trim()) {
             setError('Group name is required');
             return;
         }
 
-        const userProfile = getUserProfile(user.id) || { name: user.name, phone: '' };
+        try {
+            const newGroup = await db.createGroup(user.uid, newGroupName);
 
-        const newGroup = {
-            id: `group_${Date.now()}`,
-            name: newGroupName,
-            creator: user.id,
-            creatorName: userProfile.name,
-            creatorEmail: user.email,
-            members: [{
-                id: user.id,
-                name: userProfile.name,
-                email: user.email,
-                phone: userProfile.phone || '',
-                hasAnalysis: !!currentAnalysis,
-                joinedAt: new Date().toISOString()
-            }],
-            inviteCode: Math.random().toString(36).substring(2, 18).toUpperCase(),
-            createdAt: new Date().toISOString()
-        };
-
-        const updatedGroups = [...groups, newGroup];
-        saveGroupsToStorage(updatedGroups);
-        setSelectedGroup(newGroup);
-        setNewGroupName('');
-        setShowCreateModal(false);
-        setSuccess(`Group "${newGroupName}" created! Share code: ${newGroup.inviteCode}`);
+            await loadGroups();
+            setSelectedGroup(newGroup);
+            setNewGroupName('');
+            setShowCreateModal(false);
+            setSuccess(`Group "${newGroupName}" created! Share code: ${newGroup.invite_code}`);
+        } catch (error) {
+            setError('Failed to create new group: ' + error.message);
+        }
     };
 
-    const joinGroup = (e) => {
+    const joinGroup = async (e) => {
         e.preventDefault();
         if (!joinCode.trim()) {
             setError('Join code is required');
             return;
         }
 
-        // Search all users' groups for this invite code
-        const foundGroup = findGroupByInviteCode(joinCode.toUpperCase());
-        
-        if (!foundGroup) {
-            setError('Invalid join code');
-            return;
-        }
+        try {
+            const result = await db.joinGroup(user.uid, joinCode.toUpperCase());
 
-        // Check if already a member
-        if (foundGroup.members.some(m => m.id === user.id)) {
-            setError('You are already a member of this group');
-            return;
-        }
+            await loadGroups();
 
-        const userProfile = getUserProfile(user.id) || { name: user.name, phone: ''};
-
-        // Add user to the group
-        const newMember = {
-            id: user.id,
-            name: userProfile.name,
-            email: user.email,
-            phone: userProfile.phone || '',
-            hasAnalysis: !!currentAnalysis,
-            joinedAt: new Date().toISOString()
-        };
-
-        foundGroup.members.push(newMember);
-        updateGroupInCreatorStorage(foundGroup);
-        
-        const updatedGroups = [...groups, foundGroup];
-        saveGroupsToStorage(updatedGroups);
-        
-        setSelectedGroup(foundGroup);
-        setJoinCode('');
-        setSuccess(`Joined group "${foundGroup.name}"!`);
-    };
-
-    const findGroupByInviteCode = (code) => {
-        const allGroups = localStorage.getItem('allGroupsByCode');
-        if (allGroups) {
-            try {
-                const groupsMap = JSON.parse(allGroups);
-                return groupsMap[code];
-            } catch (error) {
-                console.error('Error finding group:', error);
+            const joinedGroup = groups.find(g => g.id === result.group_id);
+            if (joinedGroup) {
+                setSelectedGroup(joinedGroup);
             }
-        }
-        return null;
-    };
 
-    const updateGroupInCreatorStorage = (group) => {
-        // Update the global groups registry
-        const allGroups = JSON.parse(localStorage.getItem('allGroupsByCode') || '{}');
-        allGroups[group.inviteCode] = group;
-        localStorage.setItem('allGroupsByCode', JSON.stringify(allGroups));
-        
-        // Also update creator's personal groups
-        const creatorGroups = JSON.parse(localStorage.getItem(`groups_${group.creator}`) || '[]');
-        const index = creatorGroups.findIndex(g => g.id === group.id);
-        if (index !== -1) {
-            creatorGroups[index] = group;
-            localStorage.setItem(`groups_${group.creator}`, JSON.stringify(creatorGroups));
+            setJoinCode('');
+            setSuccess(`Joined group "${result.group_name}"!`);
+        } catch (error) {
+            setError('Failed to join group: ' + error.message);
         }
     };
 
-    const shareAnalysis = () => {
+    const shareAnalysis = async () => {
         if (!currentAnalysis) {
             setError('No analysis to share');
             return;
         }
 
-        const shareKey = `${selectedGroup.id}_${user.id}`;
-        const updatedShared = {
-            ...sharedAnalyses,
-            [shareKey]: {
-                ...currentAnalysis,
-                sharedBy: editingProfile.name || user.name,
-                sharedByEmail: user.email,
-                sharedAt: new Date().toISOString(),
-                groupId: selectedGroup.id
-            }
-        };
+        try {
+            await db.shareAnalysis(currentAnalysis.id, selectedGroup.id, user.uid);
 
-        localStorage.setItem('sharedAnalyses', JSON.stringify(updatedShared));
-        setSharedAnalyses(updatedShared);
-        setShowShareModal(false);
-        setSuccess('Analysis shared with group!');
+            await loadSharedAnalyses(selectedGroup.id);
+            await loadGroupMembers(selectedGroup.id);
+
+            setShowShareModal(false);
+            setSuccess('Analysis shared with group!');
+        } catch (error) {
+            setError('Failed to share analysis: ' + error.message);
+        }
     };
 
-    const unshareAnalysis = () => {
-        if (!selectedGroup || !user) return;
+    const unshareAnalysis = async () => {
+        if (!selectedGroup || !user || !currentAnalysis) return;
 
-        const shareKey = `${selectedGroup.id}_${user.id}`;
-        const updatedShared = { ...sharedAnalyses };
-        delete updatedShared[shareKey];
+        try {
+            await db.unshareAnalysis(currentAnalysis.id, selectedGroup.id, user.uid);
 
-        localStorage.setItem('sharedAnalyses', JSON.stringify(updatedShared));
-        setSharedAnalyses(updatedShared);
-        setSuccess('Analysis unshared from group');
+            await loadSharedAnalyses(selectedGroup.id);
+            await loadGroupMembers(selectedGroup.id);
+
+            setSuccess('Analysis unshared from group');
+        } catch (error) {
+            setError('Failed to unshare analysis: ' + error.message);
+        }
     };
 
-    const viewSharedAnalysis = (memberId) => {
-        const shareKey = `${selectedGroup.id}_${memberId}`;
-        const analysis = sharedAnalyses[shareKey];
+    const viewSharedAnalysis = (memberFirebaseUid) => {
+        const analysis = sharedAnalyses[memberFirebaseUid];
+
         if (analysis) {
             setSelectedAnalysis(analysis);
             setShowViewModal(true);
@@ -306,34 +221,32 @@ export const GroupsPage = () => {
         }
     };
 
-    const leaveGroup = (groupId) => {
+    const leaveGroup = async (groupId) => {
         if (window.confirm('Are you sure you want to leave this group?')) {
-            const updatedGroups = groups.filter(g => g.id !== groupId);
-            saveGroupsToStorage(updatedGroups);
-            
-            // Remove shared analysis
-            const shareKey = `${groupId}_${user.id}`;
-            const updatedShared = { ...sharedAnalyses };
-            delete updatedShared[shareKey];
-            localStorage.setItem('sharedAnalyses', JSON.stringify(updatedShared));
-            setSharedAnalyses(updatedShared);
-            
-            setSelectedGroup(updatedGroups.length > 0 ? updatedGroups[0] : null);
+            return;
+        }
+
+        try {
+            await db.leaveGroup(groupId, user.uid);
+            await loadGroups();
+
+            if (selectedGroup?.id === groupId) {
+                setSelectedGroup(groups.length > 0 ? groups[0] : null);
+            }
+
             setSuccess('Left group successfully');
+        } catch (error) {
+            setError('Failed to leave group: ' + error.message)
         }
     };
 
-    // Save group to global registry when created
-    useEffect(() => {
-        groups.forEach(group => {
-            if (group.creator === user?.id) {
-                const allGroups = JSON.parse(localStorage.getItem('allGroupsByCode') || '{}');
-                allGroups[group.inviteCode] = group;
-                localStorage.setItem('allGroupsByCode', JSON.stringify(allGroups));
-            }
-        });
-    }, [groups, user]);
+    const isAnalysisShared = () => {
+        if (!selectedGroup || !user || !currentAnalysis) return false;
 
+        const userMember = groupMembers.find(m => m.firebase_uid === user.uid);
+        return userMember?.has_shared_analysis || false;
+    };
+    
     if (loading) {
         return (
             <div style={{
@@ -388,27 +301,22 @@ export const GroupsPage = () => {
                                     Edit My Profile
                                 </button>
                                 {selectedGroup && currentAnalysis && (
-                                    (() => {
-                                        const shareKey = `${selectedGroup.id}_${user.id}`;
-                                        const isShared = !!sharedAnalyses[shareKey];
-
-                                        return isShared ? (
-                                            <button 
-                                                className="btn-secondary-large"
-                                                onClick={unshareAnalysis}
-                                                style={{ background: '#dc3545', borderColor: '#dc3545' }}
-                                            >
-                                                Unshare My Analysis
-                                            </button>
-                                        ) : (
-                                            <button 
-                                                className="btn-secondary-large" 
-                                                onClick={() => setShowShareModal(true)}
-                                            >
-                                                Share My Analysis
-                                            </button>
-                                        );
-                                    }) ()
+                                    isAnalysisShared() ? (
+                                        <button 
+                                            className="btn-secondary-large"
+                                            onClick={unshareAnalysis}
+                                            style={{ background: '#dc3545', borderColor: '#dc3545'}}
+                                        >
+                                            Unshare My Analysis
+                                        </button>
+                                    ) : (
+                                        <button 
+                                            className="btn-secondary-large"
+                                            onClick={() => setShowShareModal(true)}
+                                        >
+                                            Share My Analysis
+                                        </button>                                        
+                                    )
                                 )}
                             </div>
                         </Col>
@@ -449,7 +357,7 @@ export const GroupsPage = () => {
                                                 {group.name}
                                             </h6>
                                             <small style={{ color: 'var(--color-light-gray)' }}>
-                                                {group.members.length} members • Code: {group.inviteCode}
+                                                {group.member_count} members • Code: {group.invite_code}
                                             </small>
                                             <div style={{ marginTop: '8px' }}>
                                                 <button
@@ -488,14 +396,14 @@ export const GroupsPage = () => {
                                             {selectedGroup.name}
                                         </h4>
                                         <p style={{ color: 'var(--color-light-gray)', margin: '0' }}>
-                                            Invite Code: <strong>{selectedGroup.inviteCode}</strong> | 
-                                            Created by {selectedGroup.creatorName}
+                                            Invite Code: <strong>{selectedGroup.invite_code}</strong> | 
+                                            Created by {selectedGroup.creator_name}
                                         </p>
                                     </div>
 
                                     <div className="results-table">
                                         <h5 style={{ color: 'var(--color-dark-blue)', padding: '20px', margin: '0' }}>
-                                            Group Members ({selectedGroup.members.length})
+                                            Group Members ({groupMembers.length})
                                         </h5>
                                         <Table responsive style={{ margin: '0' }}>
                                             <thead>
@@ -509,15 +417,14 @@ export const GroupsPage = () => {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {selectedGroup.members.map((member, index) => {
-                                                    const shareKey = `${selectedGroup.id}_${member.id}`;
-                                                    const hasSharedAnalysis = !!sharedAnalyses[shareKey];
+                                                {groupMembers.map((member, index) => {
+                                                    const hasSharedAnalysis = member.has_shared_analysis;
                                                     
                                                     return (
                                                         <tr key={index}>
                                                             <td style={{ fontWeight: '600' }}>
                                                                 {member.name}
-                                                                {member.id === user.id && ( 
+                                                                {member.firebase_uid === user.uid && ( 
                                                                     <span style={{
                                                                         fontSize: '14px',
                                                                         color: 'var(--color-sage)',
@@ -539,7 +446,7 @@ export const GroupsPage = () => {
                                                                 </span>
                                                             </td>
                                                             <td>
-                                                                {hasSharedAnalysis && member.id !== user.id && (
+                                                                {hasSharedAnalysis && member.firebase_uid !== user.id && (
                                                                     <button 
                                                                         style={{
                                                                             background: 'transparent',
@@ -549,7 +456,7 @@ export const GroupsPage = () => {
                                                                             borderRadius: '4px',
                                                                             fontSize: '12px'
                                                                         }}
-                                                                        onClick={() => viewSharedAnalysis(member.id)}
+                                                                        onClick={() => viewSharedAnalysis(member.firebase_uid)}
                                                                     >
                                                                         View Analysis
                                                                     </button>
