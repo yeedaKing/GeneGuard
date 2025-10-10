@@ -313,29 +313,39 @@ export const AnalysisPage = () => {
                             </div>
 
                             {/* File Upload Area */}
-                            {files.length === 0 ? (
-                                <div
-                                    className={`upload-area ${dragOver ? 'dragover' : ''}`}
-                                    onDrop={handleDrop}
-                                    onDragOver={handleDragOver}
-                                    onDragLeave={handleDragLeave}
-                                    onClick={() => document.getElementById('file-input').click()}
-                                >
-                                    <div className="upload-icon"></div>
-                                    <h3>Drag & Drop Your File(s) Here</h3>
-                                    <p>Upload one or more files</p>
+                            <div
+                                className={`upload-area ${dragOver ? 'dragover' : ''}`}
+                                onDrop={handleDrop}
+                                onDragOver={handleDragOver}
+                                onDragLeave={handleDragLeave}
+                                onClick={() => document.getElementById('file-input').click()}
+                                style={{
+                                    padding: files.length > 0 ? '20px' : undefined,
+                                    marginBottom: '24px'
+                                }}
+                            >
+                                <div className="upload-icon" style={{ fontSize: files.length > 0 ? '24px' : undefined }}></div>
+                                <h3 style={{ fontSize: files.length > 0 ? '18px' : undefined }}> 
+                                    {files.length > 0 ? 'Add More Files' : 'Drag & Drop Your File(s) Here'}
+                                </h3>
+                                <p style={{ fontSize: files.length > 0 ? '12px' : undefined }}>
+                                    {files.length > 0 ? 'Click or drag to add more files' : 'Or click to browse files'}
+                                </p>
+                                {files.length === 0 && (
                                     <p style={{ fontSize: '14px', opacity: '0.7', marginTop: '16px' }}>
                                         Supported: .txt, .tsv, .vcf, .vcf.gz files up to 50MB
                                     </p>
-                                    <input
-                                        id="file-input"
-                                        type="file"
-                                        accept=".txt,.tsv,.vcf,.vcf.gz"
-                                        onChange={(e) => handleFilesSelect(e.target.files[0])}
-                                        style={{ display: 'none' }}
-                                    />
-                                </div>
-                            ) : (
+                                )}
+                                <input
+                                    id="file-input"
+                                    type="file"
+                                    multiple
+                                    accept=".txt,.tsv,.vcf,.vcf.gz"
+                                    onChange={(e) => handleFilesSelect(e.target.files)}
+                                    style={{ display: 'none' }}
+                                />
+                            </div>
+                            {files.length > 0 && (
                                 <div style={{
                                     background: 'rgba(255, 255, 255, 0.05)',
                                     borderRadius: '12px',
@@ -343,12 +353,12 @@ export const AnalysisPage = () => {
                                     textAlign: 'center'
                                 }}>
                                     <h4 style={{ color: '#fff', marginBottom: '16px' }}>
-                                        {files.length === 1 ? 'File Ready' : `${files.length} Files Ready`}
+                                        {files.length === 1 ? 'File Ready For Analysis' : `${files.length} Files Ready`}
                                     </h4>
-                                    <div style={{ marginBottom: '24px', textAlign: 'left' }}>
+                                    <div style={{ marginBottom: '24px', textAlign: 'left', maxHeight: '200px', overflowY: 'auto' }}>
                                         {files.map((f, index) => (
                                             <div key={index} className="file-item">
-                                                <span style={{ color: 'var(--color-light-gray)' }}>
+                                                <span style={{ color: 'var(--color-light-gray)', fontSize: '14px' }}>
                                                     <strong>{f.name}</strong> ({(f.size / (1024 * 1024)).toFixed(2)} MB)
                                                 </span>
                                                 <button 
@@ -382,13 +392,21 @@ export const AnalysisPage = () => {
                                                     Rank All Diseases
                                                 </button>                                                
                                             )}
-                                            <button className="btn-secondary-large" onClick={() => setFiles([])}>
+                                            <button 
+                                                className="btn-secondary-large" 
+                                                onClick={() => {
+                                                    setFiles([]);
+                                                    setShowRankings(false);
+                                                    setDiseaseRankings([]);
+                                                }}
+                                            >
                                                 Clear All
                                             </button>
                                         </div>
                                     )}
                                 </div>
                             )}
+                                                     
                             {/* Disease Ranking Results */}
                             {showRankings && diseaseRankings.length > 0 && (
                                 <div style={{ 
