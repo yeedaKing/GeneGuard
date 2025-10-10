@@ -40,7 +40,7 @@ export const AnalysisPage = () => {
         }
     };
 
-    const handleFileSelect = (selectedFiles) => {
+    const handleFilesSelect = (selectedFiles) => {
         const fileArray = Array.from(selectedFiles);
         const validFiles = [];
         const errors = [];
@@ -79,13 +79,7 @@ export const AnalysisPage = () => {
     const handleDrop = (e) => {
         e.preventDefault();
         setDragOver(false);
-
-        if (uploadMode === 'multiple') {
-            handleMultipleFileSelect(e.dataTransfer.files);
-        } else {
-            const droppedFile = e.dataTransfer.files[0];
-            if (droppedFile) handleFileSelect(droppedFile);
-        }
+        handleFilesSelect(e.dataTransfer.files);
     };
 
     const handleDragOver = (e) => {
@@ -388,7 +382,7 @@ export const AnalysisPage = () => {
                                                     Rank All Diseases
                                                 </button>                                                
                                             )}
-                                            <button className="btn-secondary-large" onClick={() => setFile([])}>
+                                            <button className="btn-secondary-large" onClick={() => setFiles([])}>
                                                 Clear All
                                             </button>
                                         </div>
