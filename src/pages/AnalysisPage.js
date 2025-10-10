@@ -331,7 +331,7 @@ export const AnalysisPage = () => {
                                         id="file-input"
                                         type="file"
                                         accept=".txt,.tsv,.vcf,.vcf.gz"
-                                        onChange={(e) => handleFileSelect(e.target.files[0])}
+                                        onChange={(e) => handleFilesSelect(e.target.files[0])}
                                         style={{ display: 'none' }}
                                     />
                                 </div>
