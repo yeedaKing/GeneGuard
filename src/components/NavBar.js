@@ -10,6 +10,7 @@ export const NavBar = () => {
     const navigate = useNavigate();
     const { user, logout } = useContext(AuthContext);
     const [showMenu, setShowMenu] = useState(false);
+    const { hasResults, getSummaryData } = useAnalysis();
 
     const getActiveLink = (path) => {
         return location.pathname === path ? 'active navbar-link' : 'navbar-link';
