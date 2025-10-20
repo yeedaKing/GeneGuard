@@ -29,6 +29,9 @@ class GroupJoin(BaseModel):
 class AnalysisShare(BaseModel):
     analysis_id: str
     group_id: str
+    
+class UserPreferences(BaseModel):
+    theme: Optional[str] = 'dark'
  
 def generate_invite_code():
     return str(uuid.uuid4())[:16].upper()
@@ -563,4 +566,47 @@ async def get_analysis_by_id(analysis_id: str, db: Session = Depends(get_db)):
         "gene_count": analysis[3],
         "timestamp": analysis[4].isoformat(),
         "risks": formatted_risks
+    }
+    
+@router.get("/users/{firebase_uid}/preferences")
+async def get_user_preferences(firebase_uid: str, db: Session = Depends(get_db)):
+    query = text("""
+        SELECT theme 
+        FROM users
+        WHERE firebase_uid = :uid
+    """)
+    result = db.execute(query, {"uid": firebase_uid})
+    user = result.fetchone()
+    
+    if not user:
+        raise HTTPException(404, "User not found")
+    
+    return {
+        "theme": user[0] or 'dark'
+    }
+
+@router.put("/users/{firebase_uid}/preferences")
+async def update_user_preferences(firebase_uid: str, preferences: UserPreferences, db: Session = Depends(get_db)):
+    user_id = get_firebase_uid(db, firebase_uid)
+    
+    query = text("""
+        UPDATE users
+        SET theme = :theme
+        WHERE firebase_uid = :uid
+        RETURNING id
+    """)
+    
+    result = db.execute(query, {
+        "theme": preferences.theme,
+        "uid": firebase_uid
+    })
+    db.commit()
+    
+    if not result.fetchone():
+        raise HTTPException(404, "User not found")
+
+    log_action(db, user_id, "update_theme_preference", "user", user_id)
+    return {
+        "success": True, 
+        "theme": preferences.theme
     }

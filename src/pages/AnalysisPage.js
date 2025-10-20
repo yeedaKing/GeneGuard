@@ -17,7 +17,6 @@ export const AnalysisPage = () => {
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState('');
     const [dragOver, setDragOver] = useState(false);
-    const [uploadMode, setUploadMode] = useState('single');
 
     const [analysisMode, setAnalysisMode] = useState('specific');
     const [autoAnalyzing, setAutoAnalyzing] = useState(false);
@@ -112,29 +111,9 @@ export const AnalysisPage = () => {
                 saveAnalysisResults(result);
                 navigate('/summary');
             } else {
-                const results = [];
-                const errors = [];
-
-                for (let i = 0; i < files.length; i++) {
-                    try {
-                        const result = await api.uploadGenome(files[i], disease, 10000, user.uid);
-                        results.push(result);
-                    } catch (error) {
-                        errors.push(`${files[i].name}: ${error.message}`);
-                    }
-                }
-
-                if (errors.length > 0) {
-                    setError(`Some uploads failed:\n${errors.join('\n')}`);
-                }
-
-                if (results.length > 0) {
-                    saveAnalysisResults(results[results.length - 1]);
-                    alert(`Successfully analyzed ${results.length} file(s)`);
-                    navigate('/summary');
-                } else {
-                    setError('All uploads failed');
-                }
+                const result = await api.uploadGenome(files[0], disease, 1000, user.uid);
+                saveAnalysisResults(result);
+                navigate('/summary');
             }
         } catch (err) {
             setError(err.message || 'Analysis failed');

@@ -1,10 +1,10 @@
 import { useState, useContext, useEffect } from 'react';
-import { Container, Row, Col, Alert } from 'react-bootstrap';
+import { Container, Row, Col, Alert, Modal } from 'react-bootstrap';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 
 export const AuthPage = () => {
-    const { user, loginWithEmail, registerWithEmail, loginWithGoogle } = useContext(AuthContext);
+    const { user, loginWithEmail, registerWithEmail, loginWithGoogle, loginwithMicrosoft, resetPassword } = useContext(AuthContext);
     const [searchParams] = useSearchParams();
     const [isLogin, setIsLogin] = useState(true);
     const [loading, setLoading] = useState(false);
@@ -17,6 +17,10 @@ export const AuthPage = () => {
         confirmPassword: '',
         agreeToTerms: false
     });
+    const [showResetModal, setShowResetModal] = useState(false);
+    const [resetEmail, setResetEmail] = useState('');
+    const [resetSuccess, setResetSuccess] = useState('');
+    const [resetError, setResetError] = useState('');
 
     // Check URL parameter to determine if it's login or register
     useEffect(() => {
@@ -115,6 +119,22 @@ export const AuthPage = () => {
         }
     };
 
+    const handleMicrosoftLogin = async () => {
+        setLoading(true);
+        setError('');
+
+        try {
+            const result = await loginwithMicrosoft();
+            if (!result.success) {
+                setError(result.error);
+            }
+        } catch (err) {
+            setError('Google login failed. Please try again.')
+        } finally {
+            setLoading(false);
+        }
+    }
+
     const toggleMode = () => {
         setIsLogin(!isLogin);
         setError('');
@@ -128,6 +148,32 @@ export const AuthPage = () => {
         });
         // Update URL without page reload
         window.history.pushState({}, '', isLogin ? '/auth?mode=register' : '/auth?mode=login');
+    };
+
+    const handlePasswordReset = async (e) => {
+        e.preventDefault();
+        setResetError('');
+        setResetSuccess('');
+
+        if (!resetEmail) {
+            setResetEmail('Please enter your email address');
+            return;
+        }
+
+        const result = await resetPassword(resetEmail);
+
+        if (resetEmail.success) {
+            setResetSuccess(result.message);
+            setResetEmail('');
+
+            // Close modal after 3 seconds (increase if needed)
+            setTimeout(() => {
+                setShowResetModal(false);
+                setResetSuccess('');
+            }, 3000);
+        } else {
+            setResetError(result.error);
+        }
     };
 
     return (
@@ -154,8 +200,8 @@ export const AuthPage = () => {
                                 </Alert>
                             )}
 
-                            {/* Google Auth Button */}
                             <div className="oauth-buttons mb-4">
+                                {/* Google Auth Button */}
                                 <button 
                                     className="oauth-btn google-btn"
                                     onClick={handleGoogleLogin}
@@ -163,6 +209,16 @@ export const AuthPage = () => {
                                 >
                                     <span className="oauth-icon">G</span>
                                     {isLogin ? 'Sign in with Google' : 'Sign up with Google'}
+                                </button>
+                                
+                                {/* Microsoft Auth Button */}
+                                <button
+                                    className="oauth-btn microsoft-btn"
+                                    onClick={handleMicrosoftLogin}
+                                    disabled={loading}
+                                >
+                                    <span className="oauth-icon">M</span>
+                                    {isLogin ? 'Sign in with Microsoft' :  'Sign up with Microsoft'}
                                 </button>
                             </div>
 
@@ -268,15 +324,81 @@ export const AuthPage = () => {
 
                                 {isLogin && (
                                     <div className="form-group text-end">
-                                        <a href="#" style={{ 
-                                            color: 'var(--color-sage)', 
-                                            fontSize: '14px',
-                                            textDecoration: 'none'
-                                        }}>
+                                        <button 
+                                            type="button"
+                                            onClick={() => setShowResetModal(true)}
+                                            style={{
+                                                background: 'none',
+                                                border: 'none',
+                                                color: 'var(--color-sage)',
+                                                fontSize: '14px',
+                                                textDecoration: 'none',
+                                                cursor: 'pointer',
+                                                padding: 0
+                                            }}
+                                        >
                                             Forgot your password?
-                                        </a>
+                                        </button>
                                     </div>
                                 )}
+
+                                {/* Password reset */}
+                                <Modal show={showResetModal} onHide={() => setShowResetModal(false)} centered>
+                                    <Modal.Header closeButton style={{ background: 'var(--color-dark-blue)' }}>
+                                        <Modal.Title style={{ color: '#fff' }}>Reset Password</Modal.Title>
+                                    </Modal.Header>
+                                    <Modal.Body style={{ background: 'var(--color-blue-gray'}}>
+                                        {resetSuccess && (
+                                            <Alert variant="success" className="mb-3">
+                                                {resetSuccess}
+                                            </Alert>
+                                        )}
+                                        {resetError && (
+                                            <Alert variant="danger" className="mb-3">
+                                                {resetError}
+                                            </Alert>
+                                        )}
+
+                                        <p style={{ color: 'var(--color-light-gray', marginBottom: '20px'}}>
+                                            Enter your email address and we will send a link to reset your password
+                                        </p>
+
+                                        <form onSubmit={handlePasswordReset}>
+                                            <div className="form-group">
+                                                <label className="form-group">Email Address</label>
+                                                <input 
+                                                    type="email"
+                                                    className="form-input"
+                                                    value={resetEmail}
+                                                    onChange={(e) => setResetEmail(e.target.value)}
+                                                    placeholder="your@email.com"
+                                                    required
+                                                />
+                                            </div>
+
+                                            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
+                                                <button 
+                                                    type="button"
+                                                    className="btn-secondary-large"
+                                                    onClick={() => {
+                                                        setShowResetModal(false);
+                                                        setResetError('');
+                                                        setResetSuccess('');
+                                                        setResetEmail('');
+                                                    }}
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button 
+                                                    type="button"
+                                                    className="btn-primary-large"
+                                                >
+                                                    Send Reset Link
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </Modal.Body>
+                                </Modal>
 
                                 <button
                                     type="submit"

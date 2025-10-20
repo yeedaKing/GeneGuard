@@ -71,6 +71,17 @@ class DatabaseService {
         });
     }
 
+    async getUserPreferences(firebase_uid) {
+        return this.request(`/users/${firebase_uid}/preferences`);
+    }
+
+    async updateUserPreferences(firebase_uid, preferences) {
+        return this.request(`/users/${firebase_uid}/preferences`, {
+            method: 'PUT',
+            body: preferences
+        });
+    }
+
     async createGroup(firebase_uid, name) {
         return this.request(`/groups?firebase_uid=${firebase_uid}`, {
             method: 'POST',

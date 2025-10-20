@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useCallback } from 'react';
 import { Dropdown } from 'react-bootstrap';
 import { useAnalysis } from '../context/AnalysisContext';
 import { AuthContext } from '../context/AuthContext';
@@ -8,15 +8,8 @@ export const AnalysisSwitcher = () => {
     const { user } = useContext(AuthContext);
     const { currentAnalysis, setCurrentAnalysis } = useAnalysis();
     const [analysisHistory, setAnalysisHistory] = useState([]);
-    const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        if (user?.uid) {
-            loadAnalysisHistory();
-        }
-    }, [user?.uid]);
-
-    const loadAnalysisHistory = async () => {
+    const loadAnalysisHistory = useCallback(async () => {
         if (!user?.uid) return null;
 
         setLoading(true);
@@ -29,7 +22,13 @@ export const AnalysisSwitcher = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [user?.uid]);
+
+    useEffect(() => {
+        if (user?.uid) {
+            loadAnalysisHistory();
+        }
+    }, [user?.uid, loadAnalysisHistory]);
 
     if (analysisHistory.length <= 1) {
         return null; // Don't show if only one or no analyses

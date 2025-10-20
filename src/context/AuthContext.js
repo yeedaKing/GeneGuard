@@ -7,9 +7,11 @@ import {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
     signOut,
-    onAuthStateChanged
+    onAuthStateChanged,
+    sendPasswordResetEmail
 } from 'firebase/auth';
 import { db } from '../services/database';
+import { OAuthProvider } from 'firebase/auth';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -25,6 +27,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
+const microsoftProvider = new OAuthProvider('microsoft.com');
 
 export const AuthContext = createContext();
 
@@ -51,7 +54,11 @@ export const AuthProvider = ({ children }) => {
                         email: firebaseUser.email,
                         phone: dbUser.phone,
                         profilePicture: firebaseUser.photoURL,
-                        authProvider: firebaseUser.providerData[0]?.providerId.includes('google') ? 'google' : 'email'
+                        authProvider: firebaseUser.providerData[0]?.providerId.includes('google') 
+                            ? 'google'
+                            : firebaseUser.providerData[0]?.providerId.includes('microsoft')
+                            ? 'microsoft'
+                            : 'email'
                     };
                 
                     setUser(userData);
@@ -133,11 +140,43 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const loginWithMicrosoft = async () => {
+        try {
+            setLoading(true);
+            await signInWithPopup(auth, microsoftProvider);
+            return { success: true };
+        } catch (error) {
+            console.error('Microsoft login failed:', error);
+            return {
+                success: false, 
+                error: 'Microsoft login failed. Please try again.'
+            };
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const logout = async () => {
         try {
             await signOut(auth);
         } catch (error) {
             console.error('Logout failed:', error);
+        }
+    };
+
+    const resetPassword = async (email) => {
+        try {
+            await sendPasswordResetEmail(auth, email);
+            return {
+                success: true, 
+                message: 'Password reset email sent! Check your inbox'
+            };
+        } catch (error) {
+            console.error('Password reset failed:', error);
+            return {
+                success: false, 
+                error: getAuthErrorMessage(error.code)
+            };
         }
     };
 
@@ -172,7 +211,9 @@ export const AuthProvider = ({ children }) => {
         loginWithEmail,
         registerWithEmail,
         loginWithGoogle,
-        logout
+        loginWithMicrosoft,
+        logout,
+        resetPassword
     };
 
     return (

@@ -2,14 +2,13 @@ import { Navbar, Container, Nav, Offcanvas } from "react-bootstrap";
 import { useState, useContext } from "react";
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { useAnalysis } from '../context/AnalysisContext';
+import { ThemeToggle } from "./ThemeToggle";
 import logo from '../assets/img/logo.png';
 
 export const NavBar = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { user, logout } = useContext(AuthContext);
-    const { hasResults, getSummaryData } = useAnalysis();
     const [showMenu, setShowMenu] = useState(false);
 
     const getActiveLink = (path) => {
@@ -126,6 +125,7 @@ export const NavBar = () => {
                 </Nav>
 
                 <div className="auth-buttons d-none d-lg-flex">
+                    <ThemeToggle />
                     {user ? (
                         <>
                             <span style={{ color: 'var(--color-light-gray)', marginRight: '16px' }}>
@@ -201,6 +201,9 @@ export const NavBar = () => {
                         </Nav>
                         
                         <div className="navbar-text">
+                            <div style={{ marginBottom: '16px' }}>
+                                <ThemeToggle />
+                            </div>
                             {user ? (
                                 <>
                                     <span style={{ color: 'var(--color-light-gray)', marginBottom: '12px', display: 'block' }}>
