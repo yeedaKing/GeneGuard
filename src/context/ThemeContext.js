@@ -6,7 +6,7 @@ export const ThemeProvider = ({ children }) => {
     const [theme, setTheme] = useState('dark');
     const isUpdating = useRef(false);
 
-    useInsertionEffect(() => {
+    useEffect(() => {
         const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
         setTheme(currentTheme);
 
