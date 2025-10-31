@@ -1,39 +1,35 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useRef } from 'react';
 import { AuthContext } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { db } from '../services/database';
 
 export const ThemeToggle = () => {
     const { user } = useContext(AuthContext);
-    const [theme, setTheme] = useState('dark');
+    const { theme, toggleTheme } = useTheme();
     const [loading, setLoading] = useState(true);
+    const hasLoadedTheme = useRef(false);
 
     useEffect(() => {
-        const loadTheme = async () => {
-            // load theme from database
+        const loadThemePreference = async () => {
             if (user?.uid) {
                 try {
                     const userData = await db.getCurrentUser(user.uid);
                     const savedTheme = userData.theme || 'dark';
-                    setTheme(savedTheme);
-                    document.documentElement.setAttribute('data-theme', savedTheme);
+                    if (savedTheme !== theme) {
+                        toggleTheme(savedTheme);
+                    }
                 } catch (error) {
-                    console.error('Failed to load theme: ', error);
-                    setTheme('dark');
-                    document.documentElement.setAttribute('data-theme', 'dark');
+                    console.error('Failed to load theme preference:', error);
                 }
-            } else {
-                setTheme('dark');
-                document.documentElement.setAttribute('data-theme', 'dark');
             }
-            setLoading(false);
         };
-        loadTheme();
+
+        loadThemePreference();
     }, [user?.uid]);
 
-    const toggleTheme = async () => {
+    const handleToggle = async () => {
         const newTheme = theme === 'dark' ? 'light' : 'dark';
-        setTheme(newTheme);
-        document.documentElement.setAttribute('data-theme', newTheme);
+        toggleTheme(newTheme);
 
         if (user?.uid) {
             try {
@@ -43,8 +39,6 @@ export const ThemeToggle = () => {
             }
         }
     };
-
-    if (loading) return null;
 
     return (
         <button 

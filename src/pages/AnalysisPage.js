@@ -11,7 +11,8 @@ export const AnalysisPage = () => {
     const { user } = useContext(AuthContext);
     const { saveAnalysisResults, hasResults, currentAnalysis } = useAnalysis();
     
-    const [files, setFiles] = useState([]);
+    // const [files, setFile] = useState([]);  USE FOR MULTIPLE FILES
+    const [file, setFile] = useState(null);
     const [disease, setDisease] = useState('');
     const [diseases, setDiseases] = useState([]);
     const [uploading, setUploading] = useState(false);
@@ -39,46 +40,53 @@ export const AnalysisPage = () => {
         }
     };
 
-    const handleFilesSelect = (selectedFiles) => {
-        const fileArray = Array.from(selectedFiles);
-        const validFiles = [];
-        const errors = [];
+    const handleFileSelect = (selectedFile) => {
+        // MULTIPLE FILES FOR LATER 
+        // const fileArray = Array.from(selectedFiles);
+        // const validFiles = [];
+        // const errors = [];
 
-        fileArray.forEach(file => {
-            const validation = validateGenomicFile(file);
-            if (validation.isValid) {
-                validFiles.push(file);
-            } else {
-                errors.push(`${file.name}: ${validation.errors.join(', ')}`);
-            }
-        });
+        // fileArray.forEach(file => {
+        //     const validation = validateGenomicFile(file);
+        //     if (validation.isValid) {
+        //         validFiles.push(file);
+        //     } else {
+        //         errors.push(`${file.name}: ${validation.errors.join(', ')}`);
+        //     }
+        // });
 
-        if (errors.length > 0) {
-            setError(errors.join('\n'));
+        // if (error) {
+        //     setError(errors.join('\n'));
+        // }
+
+        // if (validFile) {
+        //     setFile(prevFiles => {
+        //         const uploadedFiles = [...prevFiles, ...validFiles];
+        //         const filteredFiles = uploadedFiles.filter((file, index, self) =>
+        //             index === self.findIndex(f => f.name === file.name)
+        //         );
+        //         return filteredFiles;
+        //     });
+        const validation = validateGenomicFile(selectedFile);
+        if (!validation.isValid) {
+            setError(validation.errors.join(', '));
+            return;
         }
-
-        if (validFiles.length > 0) {
-            setFiles(prevFiles => {
-                const uploadedFiles = [...prevFiles, ...validFiles];
-                const filteredFiles = uploadedFiles.filter((file, index, self) =>
-                    index === self.findIndex(f => f.name === file.name)
-                );
-                return filteredFiles;
-            });
-            setError('');
-            setShowRankings(false);
-            setDiseaseRankings([]);
-        }
+        setFile(selectedFile)
+        setError('');
+        setShowRankings(false);
+        setDiseaseRankings([]);
     };
 
     const removeFile = (fileName) => {
-        setFiles(prevFiles => prevFiles.filter(f => f.name !== fileName));
+        setFile(prevFiles => prevFiles.filter(f => f.name !== fileName));
     }
 
     const handleDrop = (e) => {
         e.preventDefault();
         setDragOver(false);
-        handleFilesSelect(e.dataTransfer.files);
+        const droppedFile = e.dataTransfer.files[0];
+        if (droppedFile) handleFileSelect(droppedFile);
     };
 
     const handleDragOver = (e) => {
@@ -92,8 +100,19 @@ export const AnalysisPage = () => {
     };
 
     const startAnalysis = async () => {
-        if (files.length === 0 || !disease) {
-            setError('Please select files and disease');
+        // MULTIPLE FILE 
+        // if (files.length === 0 || !disease) {
+        //     setError('Please select files and disease');
+        //     return;
+        // }
+
+        // if (!user?.uid) {
+        //     setError('Please log in to save your analysis');
+        //     return;
+        // }
+
+        if (!file || !disease) {
+            setError('Please select both a file and disease');
             return;
         }
 
@@ -106,15 +125,20 @@ export const AnalysisPage = () => {
         setError('');
 
         try {
-            if (files.length === 1) {
-                const result = await api.uploadGenome(files[0], disease, 10000, user.uid);
-                saveAnalysisResults(result);
-                navigate('/summary');
-            } else {
-                const result = await api.uploadGenome(files[0], disease, 1000, user.uid);
-                saveAnalysisResults(result);
-                navigate('/summary');
-            }
+            // MULTIPLE FILES
+            // if (files.length === 1) {
+            //     const result = await api.uploadGenome(files[0], disease, 10000, user.uid);
+            //     saveAnalysisResults(result);
+            //     navigate('/summary');
+            // } else {
+            //     const result = await api.uploadGenome(files[0], disease, 1000, user.uid);
+            //     saveAnalysisResults(result);
+            //     navigate('/summary');
+            // }
+            const result = await api.uploadGenome(file, disease, 10000, user.uid);
+
+            saveAnalysisResults(result);
+            navigate('/summary');
         } catch (err) {
             setError(err.message || 'Analysis failed');
         } finally {
@@ -123,8 +147,13 @@ export const AnalysisPage = () => {
     };
 
     const startAutoAnalysis = async () => {
-        if (files.length === 0) {
-            setError('Please select file(s) first');
+        // MULTIPLE FILES
+        // if (files.length === 0) {
+        //     setError('Please select file(s) first');
+        //     return;
+        // }
+        if (!file) {
+            setError('Please select a file first');
             return;
         }
 
@@ -132,7 +161,7 @@ export const AnalysisPage = () => {
         setError('');
 
         try {
-            const result = await api.analyzeAllDiseases(files[0]);
+            const result = await api.analyzeAllDiseases(file);
             setDiseaseRankings(result.candidates || []);
             setShowRankings(true);
         } catch (err) {
@@ -152,7 +181,7 @@ export const AnalysisPage = () => {
         setError('');
 
         try {
-            const result = await api.uploadGenome(files[0], selectedDisease, 10000, user.uid);
+            const result = await api.uploadGenome(file, selectedDisease, 10000, user.uid);
             saveAnalysisResults(result);
             navigate('/summary');
         } catch (err) {
@@ -299,18 +328,18 @@ export const AnalysisPage = () => {
                                 onDragLeave={handleDragLeave}
                                 onClick={() => document.getElementById('file-input').click()}
                                 style={{
-                                    padding: files.length > 0 ? '20px' : undefined,
+                                    padding: file ? '20px' : undefined,
                                     marginBottom: '24px'
                                 }}
                             >
-                                <div className="upload-icon" style={{ fontSize: files.length > 0 ? '24px' : undefined }}></div>
-                                <h3 style={{ fontSize: files.length > 0 ? '18px' : undefined }}> 
-                                    {files.length > 0 ? 'Add More Files' : 'Drag & Drop Your File(s) Here'}
+                                <div className="upload-icon" style={{ fontSize: file ? '24px' : undefined }}></div>
+                                <h3 style={{ fontSize: file ? '18px' : undefined }}> 
+                                    {file ? 'File Selected' : 'Drag & Drop Your File Here'}
                                 </h3>
-                                <p style={{ fontSize: files.length > 0 ? '12px' : undefined }}>
-                                    {files.length > 0 ? 'Click or drag to add more files' : 'Or click to browse files'}
+                                <p style={{ fontSize: file ? '12px' : undefined }}>
+                                    {file ? 'Choose a different file' : 'Or click to browse files'}
                                 </p>
-                                {files.length === 0 && (
+                                {!file && (
                                     <p style={{ fontSize: '14px', opacity: '0.7', marginTop: '16px' }}>
                                         Supported: .txt, .tsv, .vcf, .vcf.gz files up to 50MB
                                     </p>
@@ -318,13 +347,13 @@ export const AnalysisPage = () => {
                                 <input
                                     id="file-input"
                                     type="file"
-                                    multiple
+                                    // multiple ADD BACK FOR MULTIPLE FILES LATER
                                     accept=".txt,.tsv,.vcf,.vcf.gz"
-                                    onChange={(e) => handleFilesSelect(e.target.files)}
+                                    onChange={(e) => handleFileSelect(e.target.files[0])}
                                     style={{ display: 'none' }}
                                 />
                             </div>
-                            {files.length > 0 && (
+                            {file && (
                                 <div style={{
                                     background: 'rgba(255, 255, 255, 0.05)',
                                     borderRadius: '12px',
@@ -332,22 +361,20 @@ export const AnalysisPage = () => {
                                     textAlign: 'center'
                                 }}>
                                     <h4 style={{ color: '#fff', marginBottom: '16px' }}>
-                                        {files.length === 1 ? 'File Ready For Analysis' : `${files.length} Files Ready`}
+                                        File Ready For Analysis
                                     </h4>
                                     <div style={{ marginBottom: '24px', textAlign: 'left', maxHeight: '200px', overflowY: 'auto' }}>
-                                        {files.map((f, index) => (
-                                            <div key={index} className="file-item">
-                                                <span style={{ color: 'var(--color-light-gray)', fontSize: '14px' }}>
-                                                    <strong>{f.name}</strong> ({(f.size / (1024 * 1024)).toFixed(2)} MB)
-                                                </span>
-                                                <button 
-                                                    onClick={() => removeFile(f.name)}
-                                                    className="file-remove-btn"
-                                                >
-                                                    Remove
-                                                </button>
-                                            </div>    
-                                        ))}
+                                        <div className="file-item">
+                                            <span style={{ color: 'var(--color-light-gray)', fontSize: '14px' }}>
+                                                <strong>{file.name}</strong> ({(file.size / (1024 * 1024)).toFixed(2)} MB)
+                                            </span>
+                                            <button 
+                                                onClick={() => setFile(null)}
+                                                className="file-remove-btn"
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>    
                                     </div>
 
                                     <p style={{ color: 'var(--color-light-gray)', marginBottom: '24px' }}>
@@ -358,13 +385,13 @@ export const AnalysisPage = () => {
                                     {(uploading || autoAnalyzing) ? (
                                         <div style={{ color: '#fff' }}>
                                             <div className="loading" style={{ margin: '0 auto 16px' }}></div>
-                                            <p>{autoAnalyzing ? 'Ranking diseases by risk...' : `Analyzing ${files.length} file(s)...`}</p>
+                                            <p>{autoAnalyzing ? 'Ranking diseases by risk...' : 'Analyzing your genetic data...'}</p>
                                         </div>
                                     ) : (
                                         <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
                                             {analysisMode === 'specific' ? (
                                                 <button className="btn-primary-large" onClick={startAnalysis}>
-                                                    Analyze {files.length} File{files.length > 1 ? 's' : ''}
+                                                    Start Analysis
                                                 </button>
                                             ) : (
                                                 <button className="btn-primary-large" onClick={startAutoAnalysis}>
@@ -374,7 +401,7 @@ export const AnalysisPage = () => {
                                             <button 
                                                 className="btn-secondary-large" 
                                                 onClick={() => {
-                                                    setFiles([]);
+                                                    setFile(null);
                                                     setShowRankings(false);
                                                     setDiseaseRankings([]);
                                                 }}
@@ -385,7 +412,6 @@ export const AnalysisPage = () => {
                                     )}
                                 </div>
                             )}
-                                                     
                             {/* Disease Ranking Results */}
                             {showRankings && diseaseRankings.length > 0 && (
                                 <div style={{ 
