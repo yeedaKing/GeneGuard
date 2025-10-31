@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react'
 
 const ThemeContext = createContext();
 
@@ -7,7 +7,8 @@ export const ThemeProvider = ({ children }) => {
     const isUpdating = useRef(false);
 
     useInsertionEffect(() => {
-        const currentTheme = document.documentElement.getAttribute('data-theme') || setTheme(currentTheme);
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+        setTheme(currentTheme);
 
         const observer = new MutationObserver(() => {
             if (isUpdating.current) return;
@@ -38,7 +39,7 @@ export const ThemeProvider = ({ children }) => {
     };
 
     return (
-        <ThemeContext.Provider value={{ theme }}>
+        <ThemeContext.Provider value={{ theme, toggleTheme }}>
             {children}
         </ThemeContext.Provider>
     );
