@@ -384,9 +384,33 @@ nav.navbar .navbar-nav a.nav-link.navbar-link.active {
   border-top: 1px solid var(--border-color);
 }
 
-@media (max-width: 1199px) {
+@media (max-width: 991px) {
   nav.navbar > .container {
     grid-template-columns: auto 1fr auto;
+  }
+  
+  nav.navbar .navbar-collapse {
+    display: none !important;
+  }
+  
+  .navbar-toggler {
+    display: block !important;
+  }
+}
+
+@media (max-width: 1199px) and (min-width: 992px) {
+  nav.navbar > .container {
+    grid-template-columns: auto 1fr auto;
+  }
+}
+
+@media (min-width: 992px) {
+  nav.navbar .navbar-collapse {
+    display: flex !important;
+  }
+  
+  .navbar-toggler {
+    display: none !important;
   }
 }
 
