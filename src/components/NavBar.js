@@ -55,7 +55,7 @@ export const NavBar = () => {
     return (
         <Navbar expand="lg" className="fixed-top">
             <Container>
-                <Navbar.Toggle className="d-xl-none" onClick={() => setShowMenu(true)}>
+                <Navbar.Toggle className="d-lg-none" onClick={() => setShowMenu(true)}>
                     <span className="navbar-toggler-icon"></span>
                 </Navbar.Toggle>
                 
@@ -63,7 +63,7 @@ export const NavBar = () => {
                     <img src={logo} alt="Logo" className="logo-graphic"/>
                 </Navbar.Brand>
 
-                <Nav className="nav-links d-none d-xl-flex">
+                <Nav className="nav-links d-none d-lg-flex">
                     <Nav.Link as={Link} to="/" className={getActiveLink('/')}>
                         Home
                     </Nav.Link>
@@ -126,7 +126,7 @@ export const NavBar = () => {
                     )}
                 </Nav>
 
-                <div className="auth-buttons d-none d-xl-flex">
+                <div className="auth-buttons d-none d-lg-flex">
                     <ThemeToggle />
                     {user ? (
                         <>
@@ -153,7 +153,7 @@ export const NavBar = () => {
                     show={showMenu} 
                     onHide={() => setShowMenu(false)} 
                     placement="start" 
-                    className="nav-offcanvas d-xl-none"
+                    className="nav-offcanvas d-lg-none"
                 >
                     <Offcanvas.Header closeButton closeVariant="white" />
                     <Offcanvas.Body>
