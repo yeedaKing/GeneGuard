@@ -271,6 +271,10 @@ nav.navbar > .container {
   align-items: center;
   column-gap: 16px;
   height: 100%;
+  max-width: 1320px;
+  margin: 0 auto;    
+  padding-left: 15px;
+  padding-right: 15px; 
 }
 
 nav.navbar .navbar-brand {
