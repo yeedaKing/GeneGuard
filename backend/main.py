@@ -69,6 +69,15 @@ def _detect_handler(filename: str):
 # _USER_STORE: dict[str, dict] = {}
         
 # routes
+@app.get("/")
+def root():
+    return {
+        "name": "GeneGuard API",
+        "status": "ok",
+        "docs": "/docs",
+        "endpoints": ["/diseases", "/upload-genome", "/auto-rank", "/results/{analysis_id}/csv"],
+    }
+    
 @app.get("/diseases")
 def list_diseases():
     return {"diseases": SUPPORTED_DISEASES}
