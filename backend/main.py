@@ -23,6 +23,17 @@ from dotenv import load_dotenv
 from routes.database import get_db
 from routes.database_routes import router as database_router, get_firebase_uid, log_action
 
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+DEV_ORIGINS = [
+    o.strip()
+    for o in os.getenv("DEV_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
+    if o.strip()
+]
+
 TMPDIR = Path(tempfile.gettempdir())
 SUPPORTED_DISEASES = ["alzheimers", "CHD", "hypertension", "multiple_sclerosis", "obesity",
                         "parkinsons", "stroke", "T1D", "T2D", "rheumatoid_arthritis"]
