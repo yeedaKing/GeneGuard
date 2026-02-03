@@ -10,7 +10,7 @@ export const Footer = () => {
                     <Col md={6}>
                         <div style={{ marginBottom: '16px' }}>
                             <h5 style={{ 
-                                color: '#fff', 
+                                color: 'var(--color-light-gray)', 
                                 marginBottom: '8px',
                                 fontSize: '20px',
                                 fontWeight: '600'

@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useRef } from 'react';
+import { useEffect, useContext, useCallback } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { db } from '../services/database';
@@ -6,8 +6,6 @@ import { db } from '../services/database';
 export const ThemeToggle = () => {
     const { user } = useContext(AuthContext);
     const { theme, toggleTheme } = useTheme();
-    const [loading, setLoading] = useState(true);
-    const hasLoadedTheme = useRef(false);
 
     useEffect(() => {
         const loadThemePreference = async () => {
@@ -25,9 +23,10 @@ export const ThemeToggle = () => {
         };
 
         loadThemePreference();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?.uid]);
 
-    const handleToggle = async () => {
+    const handleToggle = useCallback(async () => {
         const newTheme = theme === 'dark' ? 'light' : 'dark';
         toggleTheme(newTheme);
 
@@ -38,11 +37,11 @@ export const ThemeToggle = () => {
                 console.error('Failed to save theme preference:', error);
             }
         }
-    };
+    }, [theme, toggleTheme, user?.uid]);
 
     return (
         <button 
-            onClick={toggleTheme}
+            onClick={handleToggle}
             className='theme-toggle-btn'
             aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
             title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}

@@ -78,10 +78,6 @@ export const AnalysisPage = () => {
         setDiseaseRankings([]);
     };
 
-    const removeFile = (fileName) => {
-        setFile(prevFiles => prevFiles.filter(f => f.name !== fileName));
-    }
-
     const handleDrop = (e) => {
         e.preventDefault();
         setDragOver(false);

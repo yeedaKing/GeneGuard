@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useCallback } from 'react';
 import { Container, Row, Col, Table, Modal, Alert, Card, Form } from 'react-bootstrap';
 import { motion } from 'framer-motion';
 import { AuthContext } from '../context/AuthContext';
@@ -37,22 +37,7 @@ export const GroupsPage = () => {
     // QR Code
     const [showQRModal, setShowQRModal] = useState(false);
 
-    useEffect(() => {
-        if (user?.uid) {
-            loadGroups();
-            loadUserProfile();
-        }
-        setLoading(false);
-    }, [user?.uid]);
-
-    useEffect(() => {
-        if (selectedGroup?.id && user?.uid) {
-            loadGroupMembers(selectedGroup.id);
-            loadSharedAnalyses(selectedGroup.id);
-        }
-    }, [selectedGroup?.id, user?.uid]);
-
-    const loadUserProfile = async () => {
+    const loadUserProfile = useCallback(async () => {
         if (!user?.uid) return;
 
         try {
@@ -69,7 +54,7 @@ export const GroupsPage = () => {
                 phone: ''
             });
         }
-    };
+    }, [user?.uid, user?.name]);
 
     const saveUserProfile = async () => {
         if (!user?.uid) return;
@@ -89,7 +74,7 @@ export const GroupsPage = () => {
         }
     };
 
-    const loadGroups = async () => {
+    const loadGroups = useCallback(async () => {
         if (!user?.uid) return;
 
         try {
@@ -102,9 +87,9 @@ export const GroupsPage = () => {
             console.error('Failed to load groups:', error);
             setError('Failed to load groups');
         }
-    };
+    }, [user?.uid, selectedGroup]);
 
-    const loadGroupMembers = async (groupId) => {
+    const loadGroupMembers = useCallback(async (groupId) => {
         if (!user?.uid) return;
 
         try {
@@ -114,9 +99,9 @@ export const GroupsPage = () => {
             console.error('Failed to load group members:', error);
             setError('Failed to load group members');
         }
-    };
+    }, [user?.uid]);
 
-    const loadSharedAnalyses = async (groupId) => {
+    const loadSharedAnalyses = useCallback(async (groupId) => {
         if (!user?.uid) return;
 
         try {
@@ -134,7 +119,24 @@ export const GroupsPage = () => {
         } catch (error) {
             console.error('Failed to load shared analyses:', error);
         }
-    };
+    }, [user?.uid, groupMembers]);
+
+    useEffect(() => {
+        if (user?.uid) {
+            loadGroups();
+            loadUserProfile();
+        }
+        setLoading(false);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user?.uid, loadGroups, loadUserProfile]);
+
+    useEffect(() => {
+        if (selectedGroup?.id && user?.uid) {
+            loadGroupMembers(selectedGroup.id);
+            loadSharedAnalyses(selectedGroup.id);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedGroup?.id, user?.uid, loadGroupMembers, loadSharedAnalyses]);
 
     const createGroup = async (e) => {
         e.preventDefault();
@@ -226,7 +228,7 @@ export const GroupsPage = () => {
     };
 
     const leaveGroup = async (groupId) => {
-        if (window.confirm('Are you sure you want to leave this group?')) {
+        if (!window.confirm('Are you sure you want to leave this group?')) {
             return;
         }
 

@@ -334,17 +334,18 @@ nav.navbar .navbar-text span {
   white-space: nowrap;
   margin-right: 16px;
   font-size: 16px;
+  font-weight: 500;
 }
 
 nav.navbar .nav-links {
   justify-content: flex-start;
   margin-left: 20px;
-  gap: clamp(12px, 1.5vw, 24px);
+  gap: clamp(16px, 2vw, 32px);
   color: var(--text-secondary);
 }
 
 nav.navbar .nav-links .navbar-link {
-  font-size: clamp(13px, 1.3vw, 16px);
+  font-size: 18px;
   font-weight: 500;
   transition: color 0.3s ease;
   margin-left: 10px;
@@ -429,21 +430,22 @@ nav.navbar .navbar-nav a.nav-link.navbar-link.active {
 /* Auth Buttons */
 .auth-buttons {
   display: flex;
-  gap: 8px;
+  gap: 12px;
   align-items: center;
   margin-right: 10px;
 }
 
 .btn-sign-in {
   color: var(--text-secondary);
-  padding: 6px 16px;
+  padding: 8px 18px;
   border: 1px solid var(--text-secondary);
   border-radius: 6px;
   transition: all 0.3s ease;
   background: transparent;
   text-decoration: none;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 16px;
+  font-weight: 500;
 }
 
 .btn-sign-in:hover {
@@ -454,10 +456,10 @@ nav.navbar .navbar-nav a.nav-link.navbar-link.active {
 .btn-sign-up {
   color: var(--text-inverse);
   background: var(--color-sage);
-  padding: 6px 16px;
+  padding: 8px 18px;
   border-radius: 6px;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 16px;
   transition: all 0.3s ease;
   text-decoration: none;
   cursor: pointer;
@@ -1702,7 +1704,8 @@ nav.navbar .navbar-nav a.nav-link.navbar-link.active {
 }
 
 @media (min-width:1700px) {
-  main .container {
+  main .container,
+  nav.navbar .container {
     max-width: 100%;
     padding: 0 150px;
   }

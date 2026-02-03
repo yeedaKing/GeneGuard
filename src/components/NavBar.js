@@ -2,7 +2,6 @@ import { Navbar, Container, Nav, Offcanvas } from "react-bootstrap";
 import { useState, useContext } from "react";
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { useAnalysis } from '../context/AnalysisContext';
 import { ThemeToggle } from "./ThemeToggle";
 import logo from '../assets/img/logo.png';
 
@@ -11,7 +10,6 @@ export const NavBar = () => {
     const navigate = useNavigate();
     const { user, logout } = useContext(AuthContext);
     const [showMenu, setShowMenu] = useState(false);
-    const { hasResults, getSummaryData } = useAnalysis();
 
     const getActiveLink = (path) => {
         return location.pathname === path ? 'active navbar-link' : 'navbar-link';
@@ -50,11 +48,9 @@ export const NavBar = () => {
         }
     };
 
-    const summaryData = getSummaryData();
-
     return (
         <Navbar expand="lg" className="fixed-top">
-            <Container>
+            <Container fluid>
                 <Navbar.Toggle className="d-lg-none" onClick={() => setShowMenu(true)}>
                     <span className="navbar-toggler-icon"></span>
                 </Navbar.Toggle>

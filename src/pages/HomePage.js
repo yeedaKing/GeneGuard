@@ -1,6 +1,7 @@
 import { Container, Row, Col } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+
 import uploadImg from "../assets/img/upload.png";
 import familyImg from "../assets/img/family.png";
 import tipsImg from "../assets/img/tips.png";
@@ -11,10 +12,16 @@ import fileImg from "../assets/img/file.png";
 import aiImg from "../assets/img/ai.png";
 import reportImg from "../assets/img/report.png";
 import shieldImg from "../assets/img/shield.png";
+import shieldImgLight from "../assets/img/shield-light.png";
 import brainImg from "../assets/img/brain.png";
+import brainImgLight from "../assets/img/brain-light.png";
 import heartImg from "../assets/img/heart.png";
+import heartImgLight from "../assets/img/heart-light.png";
+import { useTheme } from "../context/ThemeContext";
 
 export const HomePage = () => {
+    const { theme } = useTheme();
+
     const features = [
         {
             imgUrl: uploadImg,
@@ -133,7 +140,7 @@ export const HomePage = () => {
                                 <Col md={4} className="mb-4">
                                     <motion.div className="value-prop text-center" variants={ fadeInUp }>
                                         <div className="value-icon">
-                                            <img src={shieldImg} alt="SHIELD"/>
+                                            <img src={theme === 'dark' ? shieldImg : shieldImgLight} alt="SHIELD"/>
                                         </div>
                                         <h5 className="value-title">Family Protection</h5>
                                         <p className="value-description">
@@ -144,7 +151,7 @@ export const HomePage = () => {
                                 <Col md={4} className="mb-4">
                                     <motion.div className="value-prop text-center" variants={ fadeInUp }>
                                         <div className="value-icon">
-                                            <img src={brainImg} alt="BRAIN"/>
+                                            <img src={theme === 'dark' ? brainImg : brainImgLight} alt="BRAIN"/>
                                         </div>
                                         <h5 className="value-title">Peace of Mind</h5>
                                         <p className="value-description">
@@ -155,7 +162,7 @@ export const HomePage = () => {
                                 <Col md={4} className="mb-4">
                                     <motion.div className="value-prop text-center" variants={ fadeInUp }>
                                         <div className="value-icon">
-                                            <img src={heartImg} alt="HEART"/>
+                                            <img src={theme === 'dark' ? heartImg : heartImgLight} alt="HEART"/>
                                         </div>
                                         <h5 className="value-title">Informed Decisions</h5>
                                         <p className="value-description">
